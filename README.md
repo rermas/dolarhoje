@@ -12,9 +12,9 @@ Site em um único `index.php` (PHP 8.1+, PDO/MySQL). Web: rotas, SEO e páginas.
 5. Opcional: `GA_ID` (padrão `G-96RWYM8GWR`, GA4; vazio desliga) e `ADSENSE_ID` (padrão `ca-pub-1615119579984751`; vazio desliga) no `config.php`.
 
 ## Deploy automático (deploy-webhook.php)
-1. No `config.php` do servidor: `DEPLOY_SECRET` (16+ caracteres aleatórios), `DEPLOY_REPO` (pasta do clone do cPanel, ex.: `/home/simul637/repositories/dolarhoje`) e, se o site não estiver na pasta do `deploy-webhook.php`, `DEPLOY_PATH`.
-2. GitHub > Settings > Webhooks > Add: URL `https://www.dolarhoje.net.br/deploy-webhook.php`, Content type `application/json`, Secret = `DEPLOY_SECRET`, evento *Just the push event*.
-3. A cada push na `main` ele valida a assinatura (HMAC-SHA256), faz `git fetch` + `reset --hard` no clone e copia `index.php`, `deploy-webhook.php`, `robots.txt` e `.htaccess`. Sem `DEPLOY_SECRET` o arquivo responde 404. Requer `git` e `proc_open` liberados no PHP do host.
+1. No servidor, em `deploy-secret.php` (ou `config.php`; fora do Git e bloqueado no `.htaccess`): `define('DEPLOY_WEBHOOK_SECRET', '...')` (16+ caracteres aleatórios), `DEPLOY_REPO` (pasta do clone do cPanel, ex.: `/home/simul637/repositories/dolarhoje`) e, se o site não estiver na pasta do `deploy-webhook.php`, `DEPLOY_PATH`.
+2. GitHub > Settings > Webhooks > Add: URL `https://www.dolarhoje.net.br/deploy-webhook.php`, Content type `application/json`, Secret = `DEPLOY_WEBHOOK_SECRET`, evento *Just the push event*.
+3. A cada push na `main` ele valida a assinatura (HMAC-SHA256), faz `git fetch` + `reset --hard` no clone e copia `index.php`, `deploy-webhook.php`, `robots.txt` e `.htaccess`. Sem o secret o arquivo responde 404. Requer `git` e `proc_open` liberados no PHP do host.
 
 ## Rotas
 `/`, `/dolar-comercial/`, `/dolar-real/`, `/dolar-turismo/`, `/euro/`, `/euro-turismo/`, `/dolar-grafico/` (`?moeda=euro&periodo=90`), `/dolar-ptax/`, `/dolar-paralelo/`, `/conversor-de-moedas/`, uma URL amigável por moeda (`/dolar-canadense/`, `/dolar-australiano/`, `/dolar-singapura/`, `/libra-esterlina/`...; slug é o 3º item de `MOEDAS`), `/sitemap.xml`, `/?action=cotacoes` (JSON).

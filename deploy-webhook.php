@@ -3,13 +3,13 @@ declare(strict_types=1);
 /**
  * Webhook de deploy: o GitHub avisa a cada push e este arquivo atualiza o site.
  * Fluxo: valida a assinatura -> git fetch/reset no clone do servidor -> copia os arquivos para o site.
- * Configuração (somente no config.php do servidor):
- *   define('DEPLOY_SECRET', 'texto-aleatorio-com-16+-caracteres');   // o mesmo "Secret" do webhook no GitHub
+ * Configuração (somente no servidor): /deploy-secret.php (ou config.php), com define() das constantes:
+ *   define('DEPLOY_WEBHOOK_SECRET', 'texto-aleatorio-com-16+-caracteres'); // o mesmo "Secret" do webhook no GitHub (DEPLOY_SECRET também vale)
  *   define('DEPLOY_REPO',   '/home/simul637/repositories/dolarhoje'); // pasta do clone (cPanel > Git Version Control)
  *   define('DEPLOY_BRANCH', 'main');                                  // opcional
  *   define('DEPLOY_PATH',   '/home/simul637/public_html');            // opcional; padrão = pasta deste arquivo
  */
-if (is_file(__DIR__ . '/config.php')) require __DIR__ . '/config.php';
+foreach (['deploy-secret.php', 'config.php'] as $f) if (is_file(__DIR__ . "/$f")) require_once __DIR__ . "/$f";
 
 const ARQUIVOS = ['index.php', 'deploy-webhook.php', 'robots.txt', '.htaccess'];
 
@@ -25,7 +25,7 @@ function git(string $repo, array $args, ?string &$out = null): int {
     return proc_close($p);
 }
 
-$secret = cfgd('DEPLOY_SECRET'); $repo = rtrim(cfgd('DEPLOY_REPO'), '/'); $branch = cfgd('DEPLOY_BRANCH', 'main'); $dest = rtrim(cfgd('DEPLOY_PATH', __DIR__), '/');
+$secret = cfgd('DEPLOY_WEBHOOK_SECRET') ?: cfgd('DEPLOY_SECRET'); $repo = rtrim(cfgd('DEPLOY_REPO'), '/'); $branch = cfgd('DEPLOY_BRANCH', 'main'); $dest = rtrim(cfgd('DEPLOY_PATH', __DIR__), '/');
 if (strlen($secret) < 16 || $repo === '') resp(404, 'Not found');                 // desligado até configurar
 if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') resp(405, 'Use POST');
 

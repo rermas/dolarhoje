@@ -26,7 +26,7 @@ RewriteRule ^ index.php [L]
 </IfModule>
 
 # Segredos e arquivos internos
-<FilesMatch "^(config\.php|\.git.*|\.cpanel\.yml|.*\.(md|log|sql|bak))$">
+<FilesMatch "^(config\.php|deploy-secret\.php|\.git.*|\.cpanel\.yml|.*\.(md|log|sql|bak))$">
     <IfModule mod_authz_core.c>
         Require all denied
     </IfModule>

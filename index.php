@@ -112,6 +112,8 @@ function wise_parse(string $html, string $iso): ?float {
     return null;
 }
 function cron(): int {
+    $lk = @fopen(sys_get_temp_dir() . '/dolarhoje-cron.lock', 'c');
+    if ($lk && !flock($lk, LOCK_EX | LOCK_NB)) { echo "já em execução\n"; return 0; }
     $hoje = date('d/m/Y'); $iso = date('Y-m-d'); $ok = 0; $falha = 0;
     try {
         db()->exec('CREATE TABLE IF NOT EXISTS moedahistorico (cod INT AUTO_INCREMENT PRIMARY KEY, data DATE NOT NULL, moeda VARCHAR(10) NOT NULL, valor FLOAT NOT NULL)');
@@ -304,6 +306,13 @@ try {
     if ($p === 'sitemap.xml') { sitemap(); exit; }
     if ($p === '') { pgHome(); exit; }
     if (isset(LEGADO[$p])) irPara(LEGADO[$p]);
+    if ($p === 'fetch-cotacoes.php' || $p === 'query.php') {   // cron por URL: exige CRON_KEY (16+ caracteres) no config.php
+        $k = (string)cfg('CRON_KEY');
+        if (strlen($k) < 16 || !hash_equals($k, (string)($_GET['key'] ?? ''))) erro(404, 'Página não encontrada');
+        header('Content-Type: text/plain; charset=utf-8'); header('Cache-Control: no-store'); header('X-Robots-Tag: noindex');
+        set_time_limit(600); ignore_user_abort(true);
+        ob_start(); $r = cron(); http_response_code($r === 0 ? 200 : 500); echo ob_get_clean(); exit;
+    }
     $dir = str_ends_with($raw, '/');
     if (isset(PAGINAS[$p])) { if (!$dir) irPara("/$p/"); pgMoeda(...PAGINAS[$p]); exit; }
     if ($p === 'conversor-de-moedas') { if (!$dir) irPara('/conversor-de-moedas/'); pgConversor(); exit; }

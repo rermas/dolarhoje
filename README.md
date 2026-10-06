@@ -8,6 +8,7 @@ Site em um único `index.php` (PHP 8.1+, PDO/MySQL). Web: rotas, SEO e páginas.
 3. Crie `config.php` na raiz a partir de `config.example.php` com a senha real. Não vai para o Git.
 4. Cron (cPanel > Cron Jobs), por exemplo de hora em hora entre 8h e 19h:
    `5 8-19 * * * /usr/local/bin/php /home/simul637/public_html/index.php cron >/dev/null 2>&1`
+   Alternativa por URL (se o cron só aceita URL): defina `CRON_KEY` no `config.php` e agende `wget -q -O /dev/null "https://www.dolarhoje.net.br/fetch-cotacoes.php?key=SUA_CHAVE"`. Sem chave válida a URL responde 404.
 5. Opcional: `GA_ID` (GA4) e `ADSENSE_ID` no `config.php`.
 
 ## Rotas

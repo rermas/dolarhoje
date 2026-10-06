@@ -12,10 +12,14 @@ Site em um único `index.php` (PHP 8.1+, PDO/MySQL). Web: rotas, SEO e páginas.
 5. Opcional: `GA_ID` (padrão `G-96RWYM8GWR`, GA4; vazio desliga) e `ADSENSE_ID` (padrão `ca-pub-1615119579984751`; vazio desliga) no `config.php`.
 
 ## Rotas
-`/`, `/dolar-comercial/`, `/dolar-turismo/`, `/dolar-real/`, `/euro/`, `/euro-turismo/`, `/conversor-de-moedas/`, `/{moeda}.php` (todas as moedas do menu "+ Outros"), `/sitemap.xml`, `/?action=cotacoes` (JSON). URLs antigas sem página equivalente: edite `LEGADO` no `index.php`.
+`/`, `/dolar-comercial/`, `/dolar-real/`, `/dolar-turismo/`, `/euro/`, `/euro-turismo/`, `/dolar-grafico/` (`?moeda=euro&periodo=90`), `/dolar-ptax/`, `/dolar-paralelo/`, `/conversor-de-moedas/`, uma URL amigável por moeda (`/dolar-canadense/`, `/dolar-australiano/`, `/dolar-singapura/`, `/libra-esterlina/`...; slug é o 3º item de `MOEDAS`), `/sitemap.xml`, `/?action=cotacoes` (JSON).
+Todo `/x.php` antigo (nome da moeda ou da página) redireciona com 301 para a URL amigável; exceções ficam em `LEGADO`.
+
+## Histórico
+Tabela `moedahistorico` (`sql/moedahistorico.sql`: DROP + CREATE + INSERT). O cron grava uma linha por moeda por dia (atualiza a do dia) e a PTAX (`ptax` = venda, `ptaxc` = compra, API do Banco Central). Sem a tabela o site funciona, só não mostra gráfico/variação.
 
 ## Turismo
 `turismo = comercial x (1 + spread)`; spreads em `config.php` (padrão 4,5% USD e 5% EUR). É estimativa: calibre comparando com casas de câmbio reais.
 
 ## Banco
-Usa as tabelas `moedas`, `selic`, `ipca` e `cdi` (não usa mais `moedahistorico`, sem histórico de cotações). O cron ignora valores que variem mais de 35% em relação ao anterior.
+Tabelas `moedas`, `selic`, `ipca`, `cdi` e `moedahistorico`. O cron ignora valores que variem mais de 35% em relação ao anterior.

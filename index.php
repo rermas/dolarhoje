@@ -159,7 +159,7 @@ function layout(string $title, string $desc, string $path, string $main, string 
     $url = base() . $path;
     $outros = '';
     foreach (MOEDAS as $n => [$c, $l]) if (!in_array($n, ['usd', 'euro'], true)) $outros .= '<a href="/' . $n . '.php">' . h($l) . '</a>';
-    $ga = (string)cfg('GA_ID', 'UA-6425016-24'); $ad = (string)cfg('ADSENSE_ID', 'ca-pub-1615119579984751');
+    $ga = (string)cfg('GA_ID', 'G-96RWYM8GWR'); $ad = (string)cfg('ADSENSE_ID', 'ca-pub-1615119579984751');
     echo '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
        . '<title>' . h($title) . '</title><meta name="description" content="' . h($desc) . '">'
        . ($index ? '<meta name="robots" content="index,follow,max-image-preview:large">' : '<meta name="robots" content="noindex">')

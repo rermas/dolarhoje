@@ -212,21 +212,28 @@ function layout(string $title, string $desc, string $path, string $main, string 
     $url = base() . $path;
     $outros = '<a href="/dolar-ptax/">Dólar PTAX</a><a href="/dolar-paralelo/">Dólar Paralelo</a>';
     foreach (MOEDAS as $n => [$c, $l]) if (!in_array($n, ['usd', 'euro'], true)) $outros .= '<a href="' . url($n) . '">' . h($l) . '</a>';
+    $nomePg = trim(explode(':', $title)[0]); $crumb = '';
+    if ($path !== '/' && $status === 200) {
+        $crumb = '<script type="application/ld+json">' . json_encode(['@context' => 'https://schema.org', '@type' => 'BreadcrumbList', 'itemListElement' => [
+            ['@type' => 'ListItem', 'position' => 1, 'name' => 'Início', 'item' => base() . '/'], ['@type' => 'ListItem', 'position' => 2, 'name' => $nomePg, 'item' => $url]]], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . '</script>';
+        $main = '<nav class="bc" aria-label="Você está em"><a href="/">Início</a> › ' . h($nomePg) . '</nav>' . $main;
+    }
+    $gsc = (string)cfg('GSC_VERIFY'); $gsc = preg_match('/^[\w-]{20,100}$/', $gsc) ? '<meta name="google-site-verification" content="' . $gsc . '">' : '';
     $ga = (string)cfg('GA_ID', 'G-96RWYM8GWR'); $ad = (string)cfg('ADSENSE_ID', 'ca-pub-1615119579984751');
     echo '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
        . '<title>' . h($title) . '</title><meta name="description" content="' . h($desc) . '">'
        . ($index ? '<meta name="robots" content="index,follow,max-image-preview:large">' : '<meta name="robots" content="noindex">')
-       . '<link rel="canonical" href="' . h($url) . '"><meta name="theme-color" content="#fd7e14">'
+       . '<link rel="canonical" href="' . h($url) . '"><meta name="theme-color" content="#fd7e14">' . $gsc
        . '<meta property="og:type" content="website"><meta property="og:locale" content="pt_BR"><meta property="og:site_name" content="Dólar Hoje">'
        . '<meta property="og:title" content="' . h($title) . '"><meta property="og:description" content="' . h($desc) . '"><meta property="og:url" content="' . h($url) . '">'
        . '<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%2716%27 fill=%27%23fd7e14%27/%3E%3Ctext x=%2716%27 y=%2722%27 font-size=%2718%27 text-anchor=%27middle%27 fill=%27white%27 font-family=%27Arial%27 font-weight=%27bold%27%3E$%3C/text%3E%3C/svg%3E">'
-       . '<style>' . CSS . '</style>' . gtagHead($ga) . adsenseHead($ad) . ($ld ? '<script type="application/ld+json">' . $ld . '</script>' : '')
+       . '<style>' . CSS . '</style>' . gtagHead($ga) . adsenseHead($ad) . ($ld ? '<script type="application/ld+json">' . $ld . '</script>' : '') . $crumb
        . '</head><body><header><div class="w"><a class="logo" href="/">Dólar Hoje</a><nav aria-label="Principal">'
        . '<a href="/dolar-comercial/">Dólar</a><a href="/dolar-turismo/">Dólar Turismo</a><a href="/euro/">Euro</a><a href="/euro-turismo/">Euro Turismo</a><a href="/dolar-grafico/">Gráfico</a><a href="/conversor-de-moedas/">Conversor</a>'
        . '<details class="o"><summary>+ Outros</summary><div>' . $outros . '</div></details></nav></div></header>'
        . $hero . '<main class="w">' . $main . '</main>'
        . '<footer><div class="w"><p>Cotações de referência, atualizadas várias vezes ao dia a partir de fontes públicas. Caráter informativo, sem oferta de compra ou venda. Valores de turismo são estimativas e variam entre casas de câmbio.</p><p>&copy; ' . date('Y') . ' Dólar Hoje</p></div></footer>'
-       . '<script>document.querySelectorAll(".calc").forEach(function(f){var r=+f.dataset.r,a=f.querySelector("[data-k=f]"),b=f.querySelector("[data-k=b]");a.oninput=function(){b.value=(a.value*r).toFixed(2)};b.oninput=function(){a.value=(b.value/r).toFixed(4)}});'
+       . '<script>document.querySelectorAll(".calc").forEach(function(f){var r=+f.dataset.r,a=f.querySelector("[data-k=f]"),b=f.querySelector("[data-k=b]"),n=function(x){return x>=1?x.toFixed(2):String(+x.toPrecision(4))};a.oninput=function(){b.value=n(a.value*r)};b.oninput=function(){a.value=n(b.value/r)}});'
        . 'var cv=document.getElementById("cv");if(cv){var R=JSON.parse(document.getElementById("rt").textContent),g=function(i){return cv.querySelector(i)},u=function(){var o=g("#v").value*R[g("#de").value]/R[g("#pa").value];g("output").textContent=isFinite(o)?o.toLocaleString("pt-BR",{maximumFractionDigits:o<1?6:4}):"-"};cv.oninput=u;u()}</script>'
        . '</body></html>';
 }
@@ -238,13 +245,25 @@ function adsenseHead(string $id): string {   // snippet padrão do AdSense
     return preg_match('/^ca-pub-\d+$/', $id) ? '<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=' . $id . '" crossorigin="anonymous"></script>' : '';
 }
 function hero(string $h1, string $p): string { return '<div class="hero"><div class="w"><h1>' . h($h1) . '</h1><p>' . h($p) . '</p></div></div>'; }
-function card(string $label, string $valor, string $sub, string $href, bool $t = false): string {
-    return '<a class="card' . ($t ? ' t' : '') . '" href="' . h($href) . '"><small>' . h($label) . '</small><b>R$ ' . h($valor) . '</b><small>' . $sub . '</small></a>';
+function card(string $label, string $valor, string $sub, string $href, bool $t = false, string $pre = 'R$ '): string {
+    return '<a class="card' . ($t ? ' t' : '') . '" href="' . h($href) . '"><small>' . h($label) . '</small><b>' . h($pre) . h($valor) . '</b><small>' . $sub . '</small></a>';
 }
-function calc(string $iso, float $rate): string {
-    return '<form class="calc" data-r="' . $rate . '" onsubmit="return false"><label>' . h($iso) . '<input type="number" step="any" inputmode="decimal" data-k="f" value="1"></label>'
-         . '<label>Reais (BRL)<input type="number" step="any" inputmode="decimal" data-k="b" value="' . number_format($rate, 2, '.', '') . '"></label></form>';
+function calc(string $iso, float $rate, bool $inv = false): string {   // $inv: reais -> moeda
+    $r = $inv ? 1 / $rate : $rate;
+    $vb = $r >= 1 ? number_format($r, 2, '.', '') : (string)(float)number_format($r, 6, '.', '');
+    return '<form class="calc" data-r="' . sprintf('%.10F', $r) . '" onsubmit="return false"><label>' . h($inv ? 'Reais (BRL)' : $iso) . '<input type="number" step="any" inputmode="decimal" data-k="f" value="1"></label>'
+         . '<label>' . h($inv ? $iso : 'Reais (BRL)') . '<input type="number" step="any" inputmode="decimal" data-k="b" value="' . $vb . '"></label></form>';
 }
+function fmtq(float $v): string { return $v >= 100 ? number_format($v, 2, ',', '.') : fmt($v); }
+function tabelaValores(string $iso, float $rate, bool $inv = false): string {   // valores prontos: moeda -> reais, ou reais -> moeda
+    $o = '';
+    foreach ($inv ? [1, 10, 50, 100, 500, 1000, 5000, 10000] : [1, 5, 10, 50, 100, 500, 1000, 5000, 10000] as $n)
+        $o .= '<tr><td>' . ($inv ? 'R$ ' . number_format($n, 0, ',', '.') : number_format($n, 0, ',', '.') . ' ' . h($iso)) . '</td><td>'
+            . ($inv ? number_format($n / $rate, 2, ',', '.') . ' ' . h($iso) : 'R$ ' . number_format($n * $rate, 2, ',', '.')) . '</td></tr>';
+    return '<table><thead><tr><th>' . ($inv ? 'Reais (BRL)' : h($iso)) . '</th><th>' . ($inv ? h($iso) : 'Reais (BRL)') . '</th></tr></thead><tbody>' . $o . '</tbody></table>';
+}
+function convs(): array { static $c = null; if ($c === null) { $c = []; foreach (MOEDAS as $m => $v) $c[$m === 'usd' ? 'dolar' : $v[2]] = $m; } return $c; }
+function cbase(string $m): string { return $m === 'usd' ? 'dolar' : MOEDAS[$m][2]; }
 function faq(array $itens): array {
     $html = ''; $ld = [];
     foreach ($itens as [$p, $r]) {
@@ -366,6 +385,7 @@ function pgHome(): void {
         '<div class="grid">' . $cards . '</div>' . $graf . '<h2>Indicadores econômicos</h2><div class="grid">' . $ind . '</div>'
         . '<h2>Todas as moedas em real</h2><table><thead><tr><th>Moeda</th><th>Código</th><th>Valor em R$</th><th>Variação</th></tr></thead><tbody>' . $linhas . '</tbody></table>'
         . '<h2>Como ler as cotações</h2><p>O <b>dólar comercial</b> é a referência do mercado, usada em operações de comércio exterior e investimentos. O <b>dólar turismo</b> é o valor cobrado de quem compra moeda em espécie ou cartão pré-pago para viajar e fica acima do comercial por causa do spread das casas de câmbio. Aqui o turismo é <a href="/dolar-turismo/">estimado a partir do comercial</a>.</p>'
+        . '<h2>Conversões populares</h2><p><a href="/dolar-real/">Dólar para real</a> · <a href="/real-para-dolar/">Real para dólar</a> · <a href="/euro-para-real/">Euro para real</a> · <a href="/real-para-euro/">Real para euro</a> · <a href="/libra-esterlina-para-real/">Libra para real</a> · <a href="/dolar-canadense-para-real/">Dólar canadense para real</a> · <a href="/dolar-australiano-para-real/">Dólar australiano para real</a> · <a href="/peso-argentino-para-real/">Peso argentino para real</a></p>'
         . '<p>Veja também: <a href="/dolar-ptax/">Dólar PTAX</a> · <a href="/dolar-paralelo/">Dólar paralelo</a> · <a href="/dolar-grafico/">Gráfico do dólar</a> · <a href="/conversor-de-moedas/">Conversor de moedas</a>.</p>',
         hero('Dólar hoje', 'Cotação do dólar, euro e outras moedas em real, atualizada ao longo do dia.'), $ld);
 }
@@ -374,7 +394,8 @@ function pgMoeda(string $m, string $modo): void {
     $c = cotacoes();
     if (!isset($c[$m])) erro(503, 'Cotação indisponível no momento');
     [$iso, $nome] = MOEDAS[$m]; $nome = nomeMoeda($m); $com = $c[$m]['v']; $data = $c[$m]['data'];
-    $rel = '<h2>Veja também</h2><p>' . ($m === 'usd' ? '<a href="/dolar-turismo/">Dólar turismo</a> · <a href="/dolar-real/">Dólar para real</a> · <a href="/dolar-ptax/">Dólar PTAX</a> · <a href="/dolar-paralelo/">Dólar paralelo</a> · <a href="/dolar-grafico/">Gráfico do dólar</a> · ' : '') . ($m === 'euro' ? '<a href="/euro-turismo/">Euro turismo</a> · ' : '') . '<a href="/conversor-de-moedas/">Conversor de moedas</a> · <a href="/">Todas as cotações</a></p>';
+    $b = cbase($m); $nl = strtolower($nome);
+    $rel = '<h2>Veja também</h2><p>' . ($m === 'usd' ? '<a href="/real-para-dolar/">Real para dólar</a> · ' : '<a href="/' . $b . '-para-real/">' . h($nome) . ' para real</a> · <a href="/real-para-' . $b . '/">Real para ' . h($nl) . '</a> · ') . ($m === 'usd' ? '<a href="/dolar-turismo/">Dólar turismo</a> · <a href="/dolar-real/">Dólar para real</a> · <a href="/dolar-ptax/">Dólar PTAX</a> · <a href="/dolar-paralelo/">Dólar paralelo</a> · <a href="/dolar-grafico/">Gráfico do dólar</a> · ' : '') . ($m === 'euro' ? '<a href="/euro-turismo/">Euro turismo</a> · ' : '') . '<a href="/conversor-de-moedas/">Conversor de moedas</a> · <a href="/">Todas as cotações</a></p>';
     if ($modo === 'turismo') {
         $tur = turismo($m, $com); $sp = number_format(spread($m) * 100, 1, ',', '');
         [$fh, $fld] = faq([
@@ -385,7 +406,7 @@ function pgMoeda(string $m, string $modo): void {
         ]);
         layout("$nome turismo hoje: cotação estimada R$ " . fmt($tur), "$nome turismo hoje: R$ " . fmt($tur) . " (estimativa a partir do comercial R$ " . fmt($com) . "). Calculadora e perguntas frequentes.", $m === 'usd' ? '/dolar-turismo/' : '/euro-turismo/',
             '<div class="grid">' . card("$nome turismo (estimado)", fmt($tur), 'comercial + ' . $sp . '%', '#', true) . card("$nome comercial", fmt($com), 'em ' . h($data), url($m)) . '</div>'
-            . '<h2>Calculadora de ' . h($nome) . ' turismo</h2>' . calc($iso, $tur)
+            . '<h2>Calculadora de ' . h($nome) . ' turismo</h2>' . calc($iso, $tur) . '<h2>Tabela: ' . h($nome) . ' turismo em reais</h2>' . tabelaValores($iso, $tur)
             . '<p class="note">Estimativa: cotação comercial multiplicada por ' . number_format(1 + spread($m), 3, ',', '') . '. Não inclui IOF nem taxas.</p>'
             . '<h2>Perguntas frequentes</h2>' . $fh . $rel,
             hero("$nome turismo hoje", 'Estimativa do valor para viajantes, calculada a partir da cotação comercial.'), $fld);
@@ -409,9 +430,40 @@ function pgMoeda(string $m, string $modo): void {
           . ($m === 'usd' ? '<p><a href="/dolar-grafico/">Ver gráfico completo do dólar</a></p>' : '<p><a href="/dolar-grafico/?moeda=' . $m . '">Ver gráfico de períodos maiores</a></p>');
     layout($title, ($real ? 'Converta dólar em real' : "Cotação do $nome ($iso) hoje") . ': R$ ' . fmt($com) . ". Histórico recente e conversor $iso/BRL.", $path,
         '<div class="grid">' . card("$iso/BRL", fmt($com), 'atualizado em ' . h($data) . $var, '#') . ($m === 'usd' || $m === 'euro' ? card("$nome turismo (estimado)", fmt(turismo($m, $com)), 'veja a página de turismo', $m === 'usd' ? '/dolar-turismo/' : '/euro-turismo/', true) : '') . '</div>'
-        . '<h2>Conversor ' . h($iso) . ' para real</h2>' . calc($iso, $com) . $hist . $sobre
+        . '<h2>Conversor ' . h($iso) . ' para real</h2>' . calc($iso, $com) . '<h2>Tabela de conversão</h2>' . tabelaValores($iso, $com) . $hist . $sobre
         . '<h2>Perguntas frequentes</h2>' . $fh . $rel,
         hero($h1, "1 $iso = R$ " . fmt($com)), $fld);
+}
+
+function pgConv(string $m, bool $inv): void {
+    $c = cotacoes();
+    if (!isset($c[$m])) erro(503, 'Cotação indisponível no momento');
+    [$iso] = MOEDAS[$m]; $nome = nomeMoeda($m); $n = strtolower($nome); $v = $c[$m]['v']; $data = $c[$m]['data']; $b = cbase($m);
+    $path = $inv ? "/real-para-$b/" : "/$b-para-real/"; $par = $inv ? "/$b-para-real/" : "/real-para-$b/";
+    $ant = anteriores()[$m] ?? null; $var = $ant ? ' · ' . pctSpan($v, $ant['v']) . ' vs ' . date('d/m', strtotime($ant['d'])) : '';
+    $um = $inv ? '1 real = ' . fmtq(1 / $v) . " $iso" : "1 $iso = R$ " . fmt($v);
+    $ex = $inv ? 'R$ 100 = ' . number_format(100 / $v, 2, ',', '.') . " $iso" : "100 $iso = R$ " . number_format(100 * $v, 2, ',', '.');
+    $itens = $inv ? [
+        ["Quanto vale 1 real em $n hoje?", 'Pela cotação de referência de hoje, 1 real vale ' . fmtq(1 / $v) . " $iso."],
+        ["Quantos $iso dá para comprar com 100 reais?", 'Com R$ 100 você compra cerca de ' . number_format(100 / $v, 2, ',', '.') . " $iso, sem considerar spread, IOF e taxas."],
+        ["Como converter reais em $n?", "Divida o valor em reais pela cotação do $n (hoje R$ " . fmt($v) . ' por 1 ' . $iso . ') ou use a calculadora desta página.'],
+        ['O valor inclui IOF e spread?', 'Não. É a cotação de referência. Bancos e casas de câmbio cobram valor maior, e o IOF e outras taxas são adicionais.'],
+    ] : [
+        ["Quanto vale 1 $n em reais hoje?", 'A cotação de referência de hoje é de R$ ' . fmt($v) . " por 1 $iso (atualizada em $data)."],
+        ["Quanto é 100 $n em reais?", "100 $iso equivalem a R$ " . number_format(100 * $v, 2, ',', '.') . ', pela cotação de referência de hoje.'],
+        ["Como converter $n para real?", "Multiplique o valor em $iso pela cotação (R$ " . fmt($v) . ') ou use a calculadora desta página.'],
+        ['O valor inclui IOF e spread?', 'Não. É a cotação de referência. Bancos e casas de câmbio cobram valor maior, e o IOF e outras taxas são adicionais.'],
+    ];
+    [$fh, $fld] = faq($itens);
+    $rel = '<h2>Veja também</h2><p><a href="' . $par . '">' . ($inv ? ucfirst($n) . ' para real' : 'Real para ' . $n) . '</a> · <a href="' . url($m) . '">' . h($nome) . ' hoje e histórico</a> · <a href="/conversor-de-moedas/">Conversor de moedas</a> · <a href="/">Todas as cotações</a></p>';
+    layout($inv ? "Real para $n hoje: converter BRL em $iso" : ucfirst($n) . " para real hoje: converter $iso em BRL",
+        ($inv ? "Real para $n: $um" : ucfirst($n) . " para real: $um") . '. Calculadora e tabela de valores prontos, atualizadas hoje.', $path,
+        '<div class="grid">' . card($inv ? "Real para $iso" : "$iso para real", $inv ? fmtq(1 / $v) . " $iso" : fmt($v), 'atualizado em ' . h($data) . $var, '#', false, $inv ? '' : 'R$ ') . card($inv ? "$iso/BRL" : 'Real para ' . $iso, $inv ? fmt($v) : fmtq(1 / $v) . " $iso", $inv ? 'cotação do ' . h($n) : 'o caminho inverso', $inv ? url($m) : $par, true, $inv ? 'R$ ' : '') . '</div>'
+        . '<h2>Calculadora: ' . ($inv ? "real para $n" : "$n para real") . '</h2>' . calc($iso, $v, $inv)
+        . '<h2>Tabela de conversão</h2>' . tabelaValores($iso, $v, $inv)
+        . '<h2>Como converter</h2><p>' . ($inv ? "Para saber quanto você compra em $n com seus reais, divida o valor em reais pela cotação." : "Para converter $n em reais, multiplique o valor em $iso pela cotação.") . " Exemplo: $ex. A cotação é de referência e não inclui spread, IOF ou taxas.</p>"
+        . '<h2>Perguntas frequentes</h2>' . $fh . $rel,
+        hero($inv ? "Real para $n" : ucfirst($n) . ' para real', $um), $fld);
 }
 
 function pgGrafico(): void {
@@ -501,6 +553,7 @@ function sitemap(): void {
     header('Content-Type: application/xml; charset=utf-8'); header('Cache-Control: public, max-age=3600');
     $c = cotacoes(); $u = ['/' => 1.0, '/dolar-comercial/' => 0.9, '/dolar-turismo/' => 0.9, '/euro/' => 0.8, '/euro-turismo/' => 0.8, '/dolar-real/' => 0.7, '/dolar-grafico/' => 0.7, '/dolar-ptax/' => 0.7, '/dolar-paralelo/' => 0.6, '/conversor-de-moedas/' => 0.7];
     foreach ($c as $n => $_) if (!in_array($n, ['usd', 'euro'], true)) $u[url($n)] = 0.5;
+    foreach ($c as $n => $_) { $b = cbase($n); $u["/real-para-$b/"] = 0.6; if ($n !== 'usd') $u["/$b-para-real/"] = 0.6; }
     echo '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
     foreach ($u as $p => $pr) echo '<url><loc>' . h(base() . $p) . '</loc><lastmod>' . date('Y-m-d') . '</lastmod><priority>' . $pr . '</priority></url>';
     echo '</urlset>';
@@ -533,6 +586,14 @@ try {
     if (isset(PAGINAS[$p])) { if (!$dir) irPara("/$p/"); pgMoeda(...PAGINAS[$p]); exit; }
     if (isset(ESPECIAIS[$p])) { if (!$dir) irPara("/$p/"); (ESPECIAIS[$p])(); exit; }
     if (isset(slugs()[$p])) { if (!$dir) irPara("/$p/"); pgMoeda(slugs()[$p], 'comercial'); exit; }
+    if (preg_match('/^(?:(real)-para-(.+)|(.+)-para-real)$/', $p, $mm)) {   // /dolar-canadense-para-real/ e /real-para-dolar-canadense/
+        $inv = $mm[1] === 'real'; $base = $inv ? $mm[2] : $mm[3];
+        if (isset(convs()[$base])) {
+            if (!$dir) irPara("/$p/");
+            if (!$inv && $base === 'dolar') irPara('/dolar-real/');   // já existe a página principal
+            pgConv(convs()[$base], $inv); exit;
+        }
+    }
     erro(404, 'Página não encontrada');
 } catch (PDOException $e) {
     error_log('dolarhoje: ' . $e->getMessage());

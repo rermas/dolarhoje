@@ -9,7 +9,7 @@ Site em um único `index.php` (PHP 8.1+, PDO/MySQL). Web: rotas, SEO e páginas.
 4. Cron (cPanel > Cron Jobs), por exemplo de hora em hora entre 8h e 19h:
    `5 8-19 * * * /usr/local/bin/php /home/simul637/public_html/index.php cron >/dev/null 2>&1`
    Alternativa por URL (se o cron só aceita URL): defina `CRON_KEY` no `config.php` e agende `wget -q -O /dev/null "https://www.dolarhoje.net.br/fetch-cotacoes.php?key=SUA_CHAVE"`. Sem chave válida a URL responde 404.
-5. Opcional: `GA_ID` (padrão `G-96RWYM8GWR`, GA4; vazio desliga) e `ADSENSE_ID` (padrão `ca-pub-1615119579984751`; vazio desliga) no `config.php`.
+5. Opcional: `GSC_VERIFY` (código da meta tag de verificação do Search Console), `GA_ID` (padrão `G-96RWYM8GWR`, GA4; vazio desliga) e `ADSENSE_ID` (padrão `ca-pub-1615119579984751`; vazio desliga) no `config.php`.
 
 ## Deploy automático (deploy-webhook.php)
 1. No servidor, em `deploy-secret.php` (ou `config.php`; fora do Git e bloqueado no `.htaccess`): `define('DEPLOY_WEBHOOK_SECRET', '...')` (16+ caracteres aleatórios), `DEPLOY_REPO` (pasta do clone do cPanel, ex.: `/home/simul637/repositories/dolarhoje`) e, se o site não estiver na pasta do `deploy-webhook.php`, `DEPLOY_PATH`.
@@ -17,7 +17,7 @@ Site em um único `index.php` (PHP 8.1+, PDO/MySQL). Web: rotas, SEO e páginas.
 3. A cada push na `main` ele valida a assinatura (HMAC-SHA256), faz `git fetch` + `reset --hard` no clone e copia `index.php`, `deploy-webhook.php`, `robots.txt` e `.htaccess`. Sem o secret o arquivo responde 404. Requer `git` e `proc_open` liberados no PHP do host.
 
 ## Rotas
-`/`, `/dolar-comercial/`, `/dolar-real/`, `/dolar-turismo/`, `/euro/`, `/euro-turismo/`, `/dolar-grafico/` (`?moeda=euro&periodo=90`), `/dolar-ptax/`, `/dolar-paralelo/`, `/conversor-de-moedas/`, uma URL amigável por moeda (`/dolar-canadense/`, `/dolar-australiano/`, `/dolar-singapura/`, `/libra-esterlina/`...; slug é o 3º item de `MOEDAS`), `/sitemap.xml`, `/?action=cotacoes` (JSON).
+`/`, `/dolar-comercial/`, `/dolar-real/`, `/dolar-turismo/`, `/euro/`, `/euro-turismo/`, `/dolar-grafico/` (`?moeda=euro&periodo=90`), `/dolar-ptax/`, `/dolar-paralelo/`, `/conversor-de-moedas/`, uma URL amigável por moeda (`/dolar-canadense/`, `/dolar-australiano/`, `/dolar-singapura/`, `/libra-esterlina/`...; slug é o 3º item de `MOEDAS`), `/{moeda}-para-real/` e `/real-para-{moeda}/` (ex.: `/euro-para-real/`, `/real-para-dolar/`; `/dolar-para-real/` redireciona para `/dolar-real/`), `/sitemap.xml`, `/?action=cotacoes` (JSON).
 Todo `/x.php` antigo (nome da moeda ou da página) redireciona com 301 para a URL amigável; exceções ficam em `LEGADO`.
 
 ## Histórico

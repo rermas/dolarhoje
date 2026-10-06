@@ -86,8 +86,13 @@ function dataIso(string $br): string { $p = explode('/', $br); return count($p) 
 function historico(string $m, int $dias): array {
     try {
         $r = q('SELECT data AS d, valor AS v FROM moedahistorico WHERE moeda = ? AND data >= ? ORDER BY data', [$m, date('Y-m-d', strtotime("-$dias days"))]);
-    } catch (PDOException) { return []; }
-    return array_map(fn($x) => ['d' => (string)$x['d'], 'v' => (float)$x['v']], $r);
+    } catch (PDOException) { $r = []; }
+    $pts = array_map(fn($x) => ['d' => (string)$x['d'], 'v' => (float)$x['v']], $r);
+    if ($c = cotacoes()[$m] ?? null) {   // inclui a cotação atual (hoje) se o dia ainda não estiver gravado no histórico
+        $d = dataIso($c['data']);
+        if ($d > ($pts ? $pts[count($pts) - 1]['d'] : '')) $pts[] = ['d' => $d, 'v' => $c['v']];
+    }
+    return $pts;
 }
 function anteriores(): array {   // último valor registrado antes da data da cotação atual, por moeda
     static $a = null;

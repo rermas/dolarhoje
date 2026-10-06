@@ -3,7 +3,7 @@ declare(strict_types=1);
 /**
  * Dólar Hoje — arquivo único.
  *  Web: roteia, consulta o banco (PDO + prepared statements) e renderiza.
- *  CLI: `php index.php cron` atualiza as cotações (Wise) em moedas / moedahistorico.
+ *  CLI: `php index.php cron` atualiza as cotações (Wise) na tabela moedas.
  * Segredos ficam em config.php (fora do Git). Veja README.md.
  */
 date_default_timezone_set('America/Sao_Paulo');
@@ -68,14 +68,6 @@ function cotacoes(): array {
 function spread(string $m): float { return (float)cfg($m === 'usd' ? 'SPREAD_USD' : 'SPREAD_EUR', $m === 'usd' ? 0.045 : 0.05); }
 function turismo(string $m, float $com): float { return $com * (1 + spread($m)); }
 function fmt(float $v): string { return number_format($v, $v >= 0.1 ? 4 : 6, ',', '.'); }
-function pct(float $v): string { return ($v > 0 ? '+' : '') . number_format($v, 2, ',', '.') . '%'; }
-function historico(string $m, int $n = 30): array {
-    try { return q('SELECT data, valor FROM moedahistorico WHERE moeda = ? ORDER BY data DESC LIMIT ' . $n, [$m]); } catch (Throwable) { return []; }
-}
-function variacao(string $m): ?float {
-    $r = historico($m, 2);
-    return count($r) === 2 && (float)$r[1]['valor'] > 0 ? ((float)$r[0]['valor'] / (float)$r[1]['valor'] - 1) * 100 : null;
-}
 function indicadores(): array {
     $meses = [1 => 'jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
     $o = [];
@@ -117,10 +109,7 @@ function wise_parse(string $html, string $iso): ?float {
 function cron(): int {
     $lk = @fopen(sys_get_temp_dir() . '/dolarhoje-cron.lock', 'c');
     if ($lk && !flock($lk, LOCK_EX | LOCK_NB)) { echo "já em execução\n"; return 0; }
-    $hoje = date('d/m/Y'); $iso = date('Y-m-d'); $ok = 0; $falha = 0;
-    try {
-        db()->exec('CREATE TABLE IF NOT EXISTS moedahistorico (cod INT AUTO_INCREMENT PRIMARY KEY, data DATE NOT NULL, moeda VARCHAR(10) NOT NULL, valor FLOAT NOT NULL)');
-    } catch (Throwable $e) { echo 'aviso moedahistorico: ' . $e->getMessage() . "\n"; }
+    $hoje = date('d/m/Y'); $ok = 0; $falha = 0;
     foreach (MOEDAS as $nome => [$cod]) {
         $v = null; $motivo = '';
         for ($t = 0; $t < 2 && $v === null; $t++) {   // 1 nova tentativa após 3s (429/403/instabilidade)
@@ -136,9 +125,6 @@ function cron(): int {
         else {
             $ant ? x('UPDATE moedas SET valor = ?, data = ? WHERE nome = ?', [$v, $hoje, $nome])
                  : x('INSERT INTO moedas (nome, valor, data) VALUES (?, ?, ?)', [$nome, $v, $hoje]);
-            q1('SELECT 1 AS e FROM moedahistorico WHERE data = ? AND moeda = ?', [$iso, $nome])
-                ? x('UPDATE moedahistorico SET valor = ? WHERE data = ? AND moeda = ?', [$v, $iso, $nome])
-                : x('INSERT INTO moedahistorico (data, moeda, valor) VALUES (?, ?, ?)', [$iso, $nome, $v]);
             echo "OK $cod = $v\n"; $ok++;
         }
         usleep(1200000);
@@ -203,20 +189,9 @@ function hero(string $h1, string $p): string { return '<div class="hero"><div cl
 function card(string $label, string $valor, string $sub, string $href, bool $t = false): string {
     return '<a class="card' . ($t ? ' t' : '') . '" href="' . h($href) . '"><small>' . h($label) . '</small><b>R$ ' . h($valor) . '</b><small>' . $sub . '</small></a>';
 }
-function varhtml(?float $v): string { return $v === null ? '' : '<span class="' . ($v >= 0 ? 'up' : 'dn') . '">' . ($v >= 0 ? '▲ ' : '▼ ') . pct($v) . '</span> · '; }
 function calc(string $iso, float $rate): string {
     return '<form class="calc" data-r="' . $rate . '" onsubmit="return false"><label>' . h($iso) . '<input type="number" step="any" inputmode="decimal" data-k="f" value="1"></label>'
          . '<label>Reais (BRL)<input type="number" step="any" inputmode="decimal" data-k="b" value="' . number_format($rate, 2, '.', '') . '"></label></form>';
-}
-function histTabela(string $m, bool $tur): string {
-    $hist = historico($m, 30);
-    if (!$hist) return '';
-    $t = '<h2>Histórico dos últimos dias</h2><table><thead><tr><th>Data</th><th>Comercial</th>' . ($tur ? '<th>Turismo (estimado)</th>' : '') . '</tr></thead><tbody>';
-    foreach ($hist as $r) {
-        $v = (float)$r['valor'];
-        $t .= '<tr><td>' . date('d/m/Y', strtotime((string)$r['data'])) . '</td><td>R$ ' . fmt($v) . '</td>' . ($tur ? '<td>R$ ' . fmt(turismo($m, $v)) . '</td>' : '') . '</tr>';
-    }
-    return $t . '</tbody></table>';
 }
 function faq(array $itens): array {
     $html = ''; $ld = [];
@@ -237,7 +212,7 @@ function pgHome(): void {
     $cards = '';
     foreach (['usd' => ['Dólar comercial', 'Dólar turismo', '/dolar-comercial/', '/dolar-turismo/'], 'euro' => ['Euro comercial', 'Euro turismo', '/euro/', '/euro-turismo/']] as $m => [$l1, $l2, $u1, $u2]) {
         if (!isset($c[$m])) continue;
-        $cards .= card($l1, fmt($c[$m]['v']), varhtml(variacao($m)) . 'em ' . h($c[$m]['data']), $u1)
+        $cards .= card($l1, fmt($c[$m]['v']), 'em ' . h($c[$m]['data']), $u1)
                 . card($l2 . ' (estimado)', fmt(turismo($m, $c[$m]['v'])), 'comercial + ' . number_format(spread($m) * 100, 1, ',', '') . '%', $u2, true);
     }
     $ind = '';
@@ -270,10 +245,10 @@ function pgMoeda(string $m, string $modo): void {
             ["Onde conseguir o melhor {$nome} turismo?", 'Compare ao menos três casas de câmbio e bancos, pergunte o valor final em reais com todos os custos e compre aos poucos para diluir a oscilação.'],
         ]);
         layout("$nome turismo hoje: cotação estimada R$ " . fmt($tur), "$nome turismo hoje: R$ " . fmt($tur) . " (estimativa a partir do comercial R$ " . fmt($com) . "). Calculadora e perguntas frequentes.", $m === 'usd' ? '/dolar-turismo/' : '/euro-turismo/',
-            '<div class="grid">' . card("$nome turismo (estimado)", fmt($tur), 'comercial + ' . $sp . '%', '#', true) . card("$nome comercial", fmt($com), varhtml(variacao($m)) . 'em ' . h($data), $m === 'usd' ? '/dolar-comercial/' : '/euro/') . '</div>'
+            '<div class="grid">' . card("$nome turismo (estimado)", fmt($tur), 'comercial + ' . $sp . '%', '#', true) . card("$nome comercial", fmt($com), 'em ' . h($data), $m === 'usd' ? '/dolar-comercial/' : '/euro/') . '</div>'
             . '<h2>Calculadora de ' . h($nome) . ' turismo</h2>' . calc($iso, $tur)
             . '<p class="note">Estimativa: cotação comercial multiplicada por ' . number_format(1 + spread($m), 3, ',', '') . '. Não inclui IOF nem taxas.</p>'
-            . histTabela($m, true) . '<h2>Perguntas frequentes</h2>' . $fh . $rel,
+            . '<h2>Perguntas frequentes</h2>' . $fh . $rel,
             hero("$nome turismo hoje", 'Estimativa do valor para viajantes, calculada a partir da cotação comercial.'), $fld);
         return;
     }
@@ -282,8 +257,8 @@ function pgMoeda(string $m, string $modo): void {
     $h1 = $real ? 'Dólar para real: converta USD em BRL' : "$nome hoje";
     $title = $real ? 'Dólar para real hoje: conversor USD/BRL' : "$nome hoje: cotação em real ($iso/BRL)";
     layout($title, ($real ? 'Converta dólar em real' : "Cotação do $nome ($iso) hoje") . ': R$ ' . fmt($com) . ". Histórico recente e conversor $iso/BRL.", $path,
-        '<div class="grid">' . card("$iso/BRL", fmt($com), varhtml(variacao($m)) . 'atualizado em ' . h($data), '#') . ($m === 'usd' || $m === 'euro' ? card("$nome turismo (estimado)", fmt(turismo($m, $com)), 'veja a página de turismo', $m === 'usd' ? '/dolar-turismo/' : '/euro-turismo/', true) : '') . '</div>'
-        . '<h2>Conversor ' . h($iso) . ' para real</h2>' . calc($iso, $com) . histTabela($m, false)
+        '<div class="grid">' . card("$iso/BRL", fmt($com), 'atualizado em ' . h($data), '#') . ($m === 'usd' || $m === 'euro' ? card("$nome turismo (estimado)", fmt(turismo($m, $com)), 'veja a página de turismo', $m === 'usd' ? '/dolar-turismo/' : '/euro-turismo/', true) : '') . '</div>'
+        . '<h2>Conversor ' . h($iso) . ' para real</h2>' . calc($iso, $com)
         . '<h2>Sobre o ' . h($nome) . '</h2><p>Cotação de referência de 1 ' . h($iso) . ' em reais (BRL). Os valores são atualizados ao longo do dia e servem como referência; a cotação praticada em bancos e casas de câmbio é diferente por causa de spread, taxas e impostos.</p>' . $rel,
         hero($h1, "1 $iso = R$ " . fmt($com)));
 }

@@ -18,4 +18,4 @@ Site em um único `index.php` (PHP 8.1+, PDO/MySQL). Web: rotas, SEO e páginas.
 `turismo = comercial x (1 + spread)`; spreads em `config.php` (padrão 4,5% USD e 5% EUR). É estimativa: calibre comparando com casas de câmbio reais.
 
 ## Banco
-Usa as tabelas existentes `moedas`, `selic`, `ipca`, `cdi` e `moedahistorico` (colunas `data`, `moeda`, `valor`; criada se não existir). O cron ignora valores que variem mais de 35% em relação ao anterior.
+Usa as tabelas `moedas`, `selic`, `ipca` e `cdi` (não usa mais `moedahistorico`, sem histórico de cotações). O cron ignora valores que variem mais de 35% em relação ao anterior.

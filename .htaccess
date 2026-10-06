@@ -15,6 +15,8 @@ RewriteRule ^ https://www.dolarhoje.net.br%{REQUEST_URI} [L,R=301]
 # .php antigo na RAIZ (libra.php, etc.) e qualquer rota inexistente vão para o index.php,
 # que responde com 200, 301 ou 404 corretos. Scripts em subpastas (ex.: /apps/query.php) rodam normalmente.
 RewriteRule ^index\.php$ - [L]
+# query.php (script antigo de cotações) liberado: executa o arquivo físico normalmente
+RewriteRule ^query\.php$ - [L]
 RewriteRule ^[^/]+\.php$ index.php [L]
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d

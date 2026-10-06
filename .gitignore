@@ -1,0 +1,24 @@
+# Cache files
+/tmp/dolarhoje_cache_*.json
+/tmp/dolarhoje-cache/
+*.cache
+
+# Logs
+*.log
+/tmp/dolarhoje-fetch.log
+
+# Config local
+config.php
+.env
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Temp
+*.tmp
+*.bak

@@ -89,16 +89,19 @@ function indicadores(): array {
 function dataIso(string $br): string { $p = explode('/', $br); return count($p) === 3 ? "$p[2]-$p[1]-$p[0]" : date('Y-m-d'); }
 
 /* ---------- cron (CLI) ---------- */
-function http(string $url): ?string {
+function http(string $url, ?int &$code = null): ?string {
+    $ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36';
+    $h = ['Accept: text/html,application/xhtml+xml', 'Accept-Language: pt-BR,pt;q=0.9,en;q=0.8'];
     if (function_exists('curl_init')) {
         $c = curl_init($url);
         curl_setopt_array($c, [CURLOPT_RETURNTRANSFER => true, CURLOPT_FOLLOWLOCATION => true, CURLOPT_TIMEOUT => 20,
-            CURLOPT_ENCODING => '', CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; DolarHoje/2.0)']);
-        $r = curl_exec($c); $ok = curl_getinfo($c, CURLINFO_RESPONSE_CODE) === 200; curl_close($c);
-        return $ok && is_string($r) ? $r : null;
+            CURLOPT_ENCODING => '', CURLOPT_USERAGENT => $ua, CURLOPT_HTTPHEADER => $h]);
+        $r = curl_exec($c); $code = (int)curl_getinfo($c, CURLINFO_RESPONSE_CODE); curl_close($c);
+        return $code === 200 && is_string($r) ? $r : null;
     }
-    $r = @file_get_contents($url, false, stream_context_create(['http' => ['timeout' => 20, 'user_agent' => 'Mozilla/5.0 (compatible; DolarHoje/2.0)']]));
-    return $r === false ? null : $r;
+    $r = @file_get_contents($url, false, stream_context_create(['http' => ['timeout' => 20, 'user_agent' => $ua, 'header' => implode("\r\n", $h), 'ignore_errors' => true]]));
+    $code = isset($http_response_header[0]) && preg_match('/\s(\d{3})\s/', $http_response_header[0], $m) ? (int)$m[1] : 0;
+    return $code === 200 && $r !== false ? $r : null;
 }
 function numero(string $s): ?float {
     if (str_contains($s, ',') && str_contains($s, '.')) $s = str_replace(',', '.', str_replace('.', '', $s));
@@ -119,9 +122,16 @@ function cron(): int {
         db()->exec('CREATE TABLE IF NOT EXISTS moedahistorico (cod INT AUTO_INCREMENT PRIMARY KEY, data DATE NOT NULL, moeda VARCHAR(10) NOT NULL, valor FLOAT NOT NULL)');
     } catch (Throwable $e) { echo 'aviso moedahistorico: ' . $e->getMessage() . "\n"; }
     foreach (MOEDAS as $nome => [$cod]) {
-        $v = ($html = http("https://wise.com/br/currency-converter/{$cod}-to-brl-rate?amount=1")) ? wise_parse($html, $cod) : null;
+        $v = null; $motivo = '';
+        for ($t = 0; $t < 2 && $v === null; $t++) {   // 1 nova tentativa após 3s (429/403/instabilidade)
+            if ($t) sleep(3);
+            $html = http("https://wise.com/br/currency-converter/{$cod}-to-brl-rate?amount=1", $code);
+            if ($html === null) { $motivo = 'HTTP ' . ($code ?: 'sem resposta'); continue; }
+            $v = wise_parse($html, $cod);
+            if ($v === null) $motivo = 'HTTP 200, mas o valor não foi encontrado no HTML (layout da Wise mudou?)';
+        }
         $ant = q1('SELECT valor FROM moedas WHERE nome = ?', [$nome]);
-        if ($v === null) { echo "FALHA $cod: valor não encontrado\n"; $falha++; }
+        if ($v === null) { echo "FALHA $cod: $motivo\n"; $falha++; }
         elseif ($ant && (float)$ant['valor'] > 0 && abs($v / (float)$ant['valor'] - 1) > 0.35) { echo "IGNORADO $cod: $v difere >35% de {$ant['valor']}\n"; $falha++; }
         else {
             $ant ? x('UPDATE moedas SET valor = ?, data = ? WHERE nome = ?', [$v, $hoje, $nome])
@@ -131,7 +141,7 @@ function cron(): int {
                 : x('INSERT INTO moedahistorico (data, moeda, valor) VALUES (?, ?, ?)', [$iso, $nome, $v]);
             echo "OK $cod = $v\n"; $ok++;
         }
-        usleep(700000);
+        usleep(1200000);
     }
     echo "$ok atualizadas, $falha com falha\n";
     return $ok > 0 ? 0 : 1;

@@ -2,5 +2,5 @@
 deployment:
   tasks:
     # Ajuste DEPLOYPATH para a pasta raiz do domínio no seu cPanel
-    - export DEPLOYPATH=/home/simul637/public_html/
+    - export DEPLOYPATH=/home/simul637/public_html/dolarhoje/
     - /bin/cp -f index.php robots.txt .htaccess $DEPLOYPATH

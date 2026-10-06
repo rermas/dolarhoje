@@ -54,6 +54,12 @@ foreach (ARQUIVOS as $f) {
     if (!copy($src, $tmp) || !rename($tmp, "$dest/$f")) { @unlink($tmp); error_log("deploy-webhook: falha ao copiar $f"); resp(500, implode("\n", $log) . "\nFALHOU ao copiar $f"); }
     $log[] = "copiado: $f";
 }
+@mkdir("$dest/posts", 0755, true);   // artigos do blog
+foreach (glob("$repo/posts/*.php") ?: [] as $src) {
+    $f = 'posts/' . basename($src); $tmp = "$dest/.new-" . basename($src);
+    if (!copy($src, $tmp) || !rename($tmp, "$dest/$f")) { @unlink($tmp); resp(500, implode("\n", $log) . "\nFALHOU ao copiar $f"); }
+    $log[] = "copiado: $f";
+}
 if (function_exists('opcache_reset')) @opcache_reset();
 $git = ''; git($repo, ['log', '-1', '--format=%h %s'], $git);
 resp(200, implode("\n", $log) . "\nOK: $git");

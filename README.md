@@ -16,6 +16,9 @@ Site em um único `index.php` (PHP 8.1+, PDO/MySQL). Web: rotas, SEO e páginas.
 2. GitHub > Settings > Webhooks > Add: URL `https://www.dolarhoje.net.br/deploy-webhook.php`, Content type `application/json`, Secret = `DEPLOY_WEBHOOK_SECRET`, evento *Just the push event*.
 3. A cada push na `main` ele valida a assinatura (HMAC-SHA256), faz `git fetch` + `reset --hard` no clone e copia `index.php`, `deploy-webhook.php`, `robots.txt` e `.htaccess`. Sem o secret o arquivo responde 404. Requer `git` e `proc_open` liberados no PHP do host.
 
+## Blog
+Cada artigo é um arquivo `posts/slug.php` que retorna um array (`slug`, `titulo`, `resumo`, `data`, `atualizado`, `conteudo` = função que imprime o HTML), igual ao projeto placasdetransito. O `index.php` lê a pasta sozinho: não há lista para manter. `data` no futuro = artigo agendado (só aparece a partir do dia). Rotas: `/blog/`, `/blog/{slug}/`, `/blog/feed.xml`. Dentro do texto, `lp('slug', 'texto')` cria link para outro artigo só se ele já estiver publicado; as funções `cotacoes()`, `fmt()`, `turismo()` e `indicadores()` dão valores do dia. O deploy copia `posts/*.php` (`.cpanel.yml` e webhook).
+
 ## Rotas
 `/`, `/dolar-comercial/`, `/dolar-real/`, `/dolar-turismo/`, `/euro/`, `/euro-turismo/`, `/dolar-grafico/` (`?moeda=euro&periodo=90`), `/dolar-ptax/`, `/dolar-paralelo/`, `/conversor-de-moedas/`, uma URL amigável por moeda (`/dolar-canadense/`, `/dolar-australiano/`, `/dolar-singapura/`, `/libra-esterlina/`...; slug é o 3º item de `MOEDAS`), `/{moeda}-para-real/` e `/real-para-{moeda}/` (ex.: `/euro-para-real/`, `/real-para-dolar/`; `/dolar-para-real/` redireciona para `/dolar-real/`), `/sitemap.xml`, `/?action=cotacoes` (JSON).
 Todo `/x.php` antigo (nome da moeda ou da página) redireciona com 301 para a URL amigável; exceções ficam em `LEGADO`.

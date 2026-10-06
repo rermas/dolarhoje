@@ -203,16 +203,17 @@ const CSS = ':root{--p:#fd7e14;--pd:#c2590a;--s:#6c757d;--bg:#fff;--soft:#fff6ee
  . '.calc,.cv{display:flex;flex-wrap:wrap;gap:10px;align-items:end;background:var(--soft);border-radius:12px;padding:14px;margin:12px 0}.calc label,.cv label{display:grid;font-size:.85rem;color:var(--s);font-weight:600}input,select{font:inherit;padding:8px 10px;border:1px solid #ced4da;border-radius:8px;min-width:130px}output{font-size:1.4rem;font-weight:800;color:var(--pd)}'
  . 'details.f{border:1px solid var(--bd);border-radius:8px;padding:10px 14px;margin:8px 0}details.f summary{font-weight:600;cursor:pointer}.note{font-size:.85rem;color:var(--s)}footer{background:#f8f9fa;border-top:1px solid var(--bd);padding:20px 0;color:var(--s);font-size:.9rem}.bc{font-size:.85rem;color:var(--s);margin:12px 0 0}'
  . '.ch{width:100%;height:auto;display:block;margin:8px 0}.ch text{font:11px system-ui,sans-serif;fill:#6c757d}form.f2{display:flex;flex-wrap:wrap;gap:10px;align-items:end;margin:12px 0}form.f2 label{display:grid;font-size:.85rem;color:var(--s);font-weight:600}button{font:inherit;font-weight:700;padding:8px 18px;border:0;border-radius:8px;background:var(--p);color:#fff;cursor:pointer}details.o div{max-height:70vh;overflow:auto}'
+ . '.post{max-width:760px}.post ul,.post ol{margin:8px 0 8px 22px}.post li{margin:4px 0}.pm{color:var(--s);font-size:.9rem}.card h3{font-size:1.1rem;line-height:1.3;margin:4px 0}.card p{margin:4px 0;color:var(--s);font-size:.92rem}.cta{background:var(--soft);border-left:4px solid var(--p);border-radius:8px;padding:14px 16px;margin:22px 0}'
  . '@media(max-width:640px){header{position:static}details.o div{position:static;box-shadow:none;width:auto}}';
 
-function layout(string $title, string $desc, string $path, string $main, string $hero = '', string $ld = '', int $status = 200, bool $index = true): void {
+function layout(string $title, string $desc, string $path, string $main, string $hero = '', string $ld = '', int $status = 200, bool $index = true, ?string $nome = null): void {
     http_response_code($status);
     header('Content-Type: text/html; charset=utf-8');
     header('Cache-Control: public, max-age=300');
     $url = base() . $path;
     $outros = '<a href="/dolar-ptax/">Dólar PTAX</a><a href="/dolar-paralelo/">Dólar Paralelo</a>';
     foreach (MOEDAS as $n => [$c, $l]) if (!in_array($n, ['usd', 'euro'], true)) $outros .= '<a href="' . url($n) . '">' . h($l) . '</a>';
-    $nomePg = trim(explode(':', $title)[0]); $crumb = '';
+    $nomePg = $nome ?? trim(preg_split('/\s*[:|]\s*/', $title)[0]); $crumb = '';
     if ($path !== '/' && $status === 200) {
         $crumb = '<script type="application/ld+json">' . json_encode(['@context' => 'https://schema.org', '@type' => 'BreadcrumbList', 'itemListElement' => [
             ['@type' => 'ListItem', 'position' => 1, 'name' => 'Início', 'item' => base() . '/'], ['@type' => 'ListItem', 'position' => 2, 'name' => $nomePg, 'item' => $url]]], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . '</script>';
@@ -223,13 +224,13 @@ function layout(string $title, string $desc, string $path, string $main, string 
     echo '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
        . '<title>' . h($title) . '</title><meta name="description" content="' . h($desc) . '">'
        . ($index ? '<meta name="robots" content="index,follow,max-image-preview:large">' : '<meta name="robots" content="noindex">')
-       . '<link rel="canonical" href="' . h($url) . '"><meta name="theme-color" content="#fd7e14">' . $gsc
+       . '<link rel="alternate" type="application/rss+xml" title="Blog Dólar Hoje" href="/blog/feed.xml"><link rel="canonical" href="' . h($url) . '"><meta name="theme-color" content="#fd7e14">' . $gsc
        . '<meta property="og:type" content="website"><meta property="og:locale" content="pt_BR"><meta property="og:site_name" content="Dólar Hoje">'
        . '<meta property="og:title" content="' . h($title) . '"><meta property="og:description" content="' . h($desc) . '"><meta property="og:url" content="' . h($url) . '">'
        . '<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%2716%27 fill=%27%23fd7e14%27/%3E%3Ctext x=%2716%27 y=%2722%27 font-size=%2718%27 text-anchor=%27middle%27 fill=%27white%27 font-family=%27Arial%27 font-weight=%27bold%27%3E$%3C/text%3E%3C/svg%3E">'
        . '<style>' . CSS . '</style>' . gtagHead($ga) . adsenseHead($ad) . ($ld ? '<script type="application/ld+json">' . $ld . '</script>' : '') . $crumb
        . '</head><body><header><div class="w"><a class="logo" href="/">Dólar Hoje</a><nav aria-label="Principal">'
-       . '<a href="/dolar-comercial/">Dólar</a><a href="/dolar-turismo/">Dólar Turismo</a><a href="/euro/">Euro</a><a href="/euro-turismo/">Euro Turismo</a><a href="/dolar-grafico/">Gráfico</a><a href="/conversor-de-moedas/">Conversor</a>'
+       . '<a href="/dolar-comercial/">Dólar</a><a href="/dolar-turismo/">Dólar Turismo</a><a href="/euro/">Euro</a><a href="/euro-turismo/">Euro Turismo</a><a href="/dolar-grafico/">Gráfico</a><a href="/conversor-de-moedas/">Conversor</a><a href="/blog/">Blog</a>'
        . '<details class="o"><summary>+ Outros</summary><div>' . $outros . '</div></details></nav></div></header>'
        . $hero . '<main class="w">' . $main . '</main>'
        . '<footer><div class="w"><p>Cotações de referência, atualizadas várias vezes ao dia a partir de fontes públicas. Caráter informativo, sem oferta de compra ou venda. Valores de turismo são estimativas e variam entre casas de câmbio.</p><p>&copy; ' . date('Y') . ' Dólar Hoje</p></div></footer>'
@@ -379,6 +380,7 @@ function pgHome(): void {
         $linhas .= '<tr><td><a href="' . url($n) . '">' . h(MOEDAS[$n][1]) . '</a></td><td>' . h(MOEDAS[$n][0]) . '</td><td>R$ ' . fmt($r['v']) . '</td><td>' . (isset($ant[$n]) ? pctSpan($r['v'], $ant[$n]['v']) : '–') . '</td></tr>';
     $pts = historico('usd', 30);
     $graf = count($pts) > 1 ? '<h2>Dólar nos últimos 30 dias</h2>' . grafico($pts, 'Dólar em reais, últimos 30 dias') . '<p><a href="/dolar-grafico/">Ver gráfico completo do dólar</a></p>' : '';
+    $bl = blog_posts() ? '<h2>Do blog</h2>' . cardsPosts(array_slice(blog_posts(), 0, 3)) . '<p><a href="/blog/">Ver todos os artigos</a></p>' : '';
     $ld = json_encode(['@context' => 'https://schema.org', '@type' => 'WebSite', 'name' => 'Dólar Hoje', 'url' => base() . '/', 'inLanguage' => 'pt-BR'], JSON_UNESCAPED_SLASHES);
     $usd = isset($c['usd']) ? 'R$ ' . fmt($c['usd']['v']) : '';
     layout('Dólar hoje: cotação do dólar, euro e outras moedas', "Dólar comercial $usd e turismo, euro e mais " . (count($c) - 2) . ' moedas em real, com histórico, conversor e Selic, IPCA e CDI.', '/',
@@ -386,7 +388,7 @@ function pgHome(): void {
         . '<h2>Todas as moedas em real</h2><table><thead><tr><th>Moeda</th><th>Código</th><th>Valor em R$</th><th>Variação</th></tr></thead><tbody>' . $linhas . '</tbody></table>'
         . '<h2>Como ler as cotações</h2><p>O <b>dólar comercial</b> é a referência do mercado, usada em operações de comércio exterior e investimentos. O <b>dólar turismo</b> é o valor cobrado de quem compra moeda em espécie ou cartão pré-pago para viajar e fica acima do comercial por causa do spread das casas de câmbio. Aqui o turismo é <a href="/dolar-turismo/">estimado a partir do comercial</a>.</p>'
         . '<h2>Conversões populares</h2><p><a href="/dolar-real/">Dólar para real</a> · <a href="/real-para-dolar/">Real para dólar</a> · <a href="/euro-para-real/">Euro para real</a> · <a href="/real-para-euro/">Real para euro</a> · <a href="/libra-esterlina-para-real/">Libra para real</a> · <a href="/dolar-canadense-para-real/">Dólar canadense para real</a> · <a href="/dolar-australiano-para-real/">Dólar australiano para real</a> · <a href="/peso-argentino-para-real/">Peso argentino para real</a></p>'
-        . '<p>Veja também: <a href="/dolar-ptax/">Dólar PTAX</a> · <a href="/dolar-paralelo/">Dólar paralelo</a> · <a href="/dolar-grafico/">Gráfico do dólar</a> · <a href="/conversor-de-moedas/">Conversor de moedas</a>.</p>',
+        . '<p>Veja também: <a href="/dolar-ptax/">Dólar PTAX</a> · <a href="/dolar-paralelo/">Dólar paralelo</a> · <a href="/dolar-grafico/">Gráfico do dólar</a> · <a href="/conversor-de-moedas/">Conversor de moedas</a>.</p>' . $bl,
         hero('Dólar hoje', 'Cotação do dólar, euro e outras moedas em real, atualizada ao longo do dia.'), $ld);
 }
 
@@ -538,6 +540,62 @@ function pgParalelo(): void {
         hero('Dólar paralelo', 'O que é, por que não tem cotação oficial e quais as alternativas seguras.'), $fld);
 }
 
+/* ---------- blog: cada artigo é um arquivo posts/slug.php que retorna um array (slug, titulo, resumo, data, atualizado, conteudo = function que imprime o HTML) ---------- */
+function blog_posts(bool $agendados = false): array {
+    static $todos = null;
+    if ($todos === null) {
+        $todos = [];
+        foreach (glob(__DIR__ . '/posts/*.php') ?: [] as $f) {
+            $p = require $f;
+            if (is_array($p) && isset($p['slug'], $p['titulo'], $p['resumo'], $p['data'], $p['conteudo'])) $todos[] = $p;
+        }
+        usort($todos, fn($a, $b) => strcmp($b['data'], $a['data']));
+    }
+    return $agendados ? $todos : array_values(array_filter($todos, fn($p) => $p['data'] <= date('Y-m-d')));   // data futura = agendado
+}
+function blog_post(string $slug): ?array { foreach (blog_posts() as $p) if ($p['slug'] === $slug) return $p; return null; }
+function lp(string $slug, string $texto): string {   // link para outro post (só vira link se já estiver publicado)
+    return blog_post($slug) ? '<a href="/blog/' . h($slug) . '/">' . h($texto) . '</a>' : h($texto);
+}
+function dataPt(string $d): string {
+    static $m = [1 => 'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+    $t = strtotime($d); return $t ? (int)date('j', $t) . ' de ' . $m[(int)date('n', $t)] . ' de ' . date('Y', $t) : $d;
+}
+function cardsPosts(array $posts): string {
+    $o = '';
+    foreach ($posts as $p) $o .= '<a class="card" href="/blog/' . h($p['slug']) . '/"><small>' . h(dataPt($p['data'])) . '</small><h3>' . h($p['titulo']) . '</h3><p>' . h($p['resumo']) . '</p></a>';
+    return '<div class="grid">' . $o . '</div>';
+}
+function pgBlog(): void {
+    $posts = blog_posts();
+    layout('Blog sobre câmbio, dólar e investimentos | Dólar Hoje', 'Artigos sobre dólar, euro, câmbio para viagem, IOF, Selic, CDI e IPCA, com explicações simples e dados do Dólar Hoje.', '/blog/',
+        ($posts ? cardsPosts($posts) : '<p>Em breve, novos artigos por aqui.</p>') . '<p><a href="/blog/feed.xml">Assinar por RSS</a></p>',
+        hero('Blog', 'Câmbio, dólar, viagem e investimentos, sem complicação.'), '', 200, true, 'Blog');
+}
+function pgPost(string $slug): void {
+    $p = blog_post($slug);
+    if (!$p) erro(404, 'Página não encontrada');
+    $url = base() . '/blog/' . $p['slug'] . '/';
+    ob_start(); ($p['conteudo'])(); $corpo = ob_get_clean();
+    $outros = array_slice(array_values(array_filter(blog_posts(), fn($x) => $x['slug'] !== $p['slug'])), 0, 3);
+    $mod = !empty($p['atualizado']) && $p['atualizado'] !== $p['data'] ? ' &middot; atualizado em ' . h(dataPt($p['atualizado'])) : '';
+    $ld = json_encode(['@context' => 'https://schema.org', '@type' => 'BlogPosting', 'headline' => $p['titulo'], 'description' => $p['resumo'], 'datePublished' => $p['data'],
+        'dateModified' => $p['atualizado'] ?? $p['data'], 'inLanguage' => 'pt-BR', 'author' => ['@type' => 'Organization', 'name' => 'Dólar Hoje'],
+        'publisher' => ['@type' => 'Organization', 'name' => 'Dólar Hoje'], 'mainEntityOfPage' => $url], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    layout($p['titulo'] . ' | Blog Dólar Hoje', $p['resumo'], '/blog/' . $p['slug'] . '/',
+        '<article class="post"><p class="pm">Publicado em ' . h(dataPt($p['data'])) . $mod . '</p>' . $corpo . '</article>'
+        . '<div class="cta"><b>Acompanhe as cotações</b><br><a href="/dolar-comercial/">Dólar hoje</a> · <a href="/dolar-turismo/">Dólar turismo</a> · <a href="/euro/">Euro</a> · <a href="/conversor-de-moedas/">Conversor de moedas</a></div>'
+        . ($outros ? '<h2>Leia também</h2>' . cardsPosts($outros) : ''),
+        hero($p['titulo'], $p['resumo']), $ld, 200, true, $p['titulo']);
+}
+function feed(): void {
+    header('Content-Type: application/rss+xml; charset=utf-8'); header('Cache-Control: public, max-age=3600');
+    echo '<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>Blog Dólar Hoje</title><link>' . h(base() . '/blog/') . '</link><description>Câmbio, dólar, viagem e investimentos.</description><language>pt-BR</language>';
+    foreach (array_slice(blog_posts(), 0, 20) as $p)
+        echo '<item><title>' . h($p['titulo']) . '</title><link>' . h(base() . '/blog/' . $p['slug'] . '/') . '</link><guid>' . h(base() . '/blog/' . $p['slug'] . '/') . '</guid><pubDate>' . date(DATE_RSS, strtotime($p['data'] . ' 08:00') ?: time()) . '</pubDate><description>' . h($p['resumo']) . '</description></item>';
+    echo '</channel></rss>';
+}
+
 function pgConversor(): void {
     $c = cotacoes(); $rt = ['BRL' => 1.0]; $op = '<option value="BRL">BRL — Real</option>';
     foreach ($c as $n => $r) { $rt[MOEDAS[$n][0]] = $r['v']; $op .= '<option value="' . MOEDAS[$n][0] . '">' . MOEDAS[$n][0] . ' — ' . h(MOEDAS[$n][1]) . '</option>'; }
@@ -553,6 +611,7 @@ function sitemap(): void {
     header('Content-Type: application/xml; charset=utf-8'); header('Cache-Control: public, max-age=3600');
     $c = cotacoes(); $u = ['/' => 1.0, '/dolar-comercial/' => 0.9, '/dolar-turismo/' => 0.9, '/euro/' => 0.8, '/euro-turismo/' => 0.8, '/dolar-real/' => 0.7, '/dolar-grafico/' => 0.7, '/dolar-ptax/' => 0.7, '/dolar-paralelo/' => 0.6, '/conversor-de-moedas/' => 0.7];
     foreach ($c as $n => $_) if (!in_array($n, ['usd', 'euro'], true)) $u[url($n)] = 0.5;
+    $u['/blog/'] = 0.6; foreach (blog_posts() as $p) $u['/blog/' . $p['slug'] . '/'] = 0.6;
     foreach ($c as $n => $_) { $b = cbase($n); $u["/real-para-$b/"] = 0.6; if ($n !== 'usd') $u["/$b-para-real/"] = 0.6; }
     echo '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
     foreach ($u as $p => $pr) echo '<url><loc>' . h(base() . $p) . '</loc><lastmod>' . date('Y-m-d') . '</lastmod><priority>' . $pr . '</priority></url>';
@@ -568,6 +627,9 @@ try {
         echo json_encode(array_map(fn($r) => ['valor' => $r['v'], 'data' => $r['data']], cotacoes())); exit;
     }
     if ($p === 'sitemap.xml') { sitemap(); exit; }
+    if ($p === 'blog/feed.xml') { feed(); exit; }
+    if ($p === 'blog') { if (!str_ends_with($raw, '/')) irPara('/blog/'); pgBlog(); exit; }
+    if (preg_match('#^blog/([a-z0-9-]+)$#', $p, $bm)) { if (!str_ends_with($raw, '/')) irPara('/blog/' . $bm[1] . '/'); pgPost($bm[1]); exit; }
     if ($p === '') { pgHome(); exit; }
     if (isset(LEGADO[$p])) irPara(LEGADO[$p]);
     if ($p === 'fetch-cotacoes.php' || $p === 'query.php') {   // cron por URL: exige CRON_KEY (16+ caracteres) no config.php

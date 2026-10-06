@@ -166,7 +166,7 @@ function layout(string $title, string $desc, string $path, string $main, string 
     $url = base() . $path;
     $outros = '';
     foreach (MOEDAS as $n => [$c, $l]) if (!in_array($n, ['usd', 'euro'], true)) $outros .= '<a href="/' . $n . '.php">' . h($l) . '</a>';
-    $ga = (string)cfg('GA_ID'); $ad = (string)cfg('ADSENSE_ID');
+    $ga = (string)cfg('GA_ID', 'UA-6425016-24'); $ad = (string)cfg('ADSENSE_ID');
     echo '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
        . '<title>' . h($title) . '</title><meta name="description" content="' . h($desc) . '">'
        . ($index ? '<meta name="robots" content="index,follow,max-image-preview:large">' : '<meta name="robots" content="noindex">')
@@ -174,7 +174,7 @@ function layout(string $title, string $desc, string $path, string $main, string 
        . '<meta property="og:type" content="website"><meta property="og:locale" content="pt_BR"><meta property="og:site_name" content="Dólar Hoje">'
        . '<meta property="og:title" content="' . h($title) . '"><meta property="og:description" content="' . h($desc) . '"><meta property="og:url" content="' . h($url) . '">'
        . '<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%2716%27 fill=%27%23fd7e14%27/%3E%3Ctext x=%2716%27 y=%2722%27 font-size=%2718%27 text-anchor=%27middle%27 fill=%27white%27 font-family=%27Arial%27 font-weight=%27bold%27%3E$%3C/text%3E%3C/svg%3E">'
-       . '<style>' . CSS . '</style>' . ($ld ? '<script type="application/ld+json">' . $ld . '</script>' : '')
+       . '<style>' . CSS . '</style>' . gtagHead($ga) . ($ld ? '<script type="application/ld+json">' . $ld . '</script>' : '')
        . '</head><body><header><div class="w"><a class="logo" href="/">Dólar Hoje</a><nav aria-label="Principal">'
        . '<a href="/dolar-comercial/">Dólar</a><a href="/dolar-turismo/">Dólar Turismo</a><a href="/euro/">Euro</a><a href="/euro-turismo/">Euro Turismo</a><a href="/conversor-de-moedas/">Conversor</a>'
        . '<details class="o"><summary>+ Outros</summary><div>' . $outros . '</div></details></nav></div></header>'
@@ -182,9 +182,12 @@ function layout(string $title, string $desc, string $path, string $main, string 
        . '<footer><div class="w"><p>Cotações de referência, atualizadas várias vezes ao dia a partir de fontes públicas. Caráter informativo, sem oferta de compra ou venda. Valores de turismo são estimativas e variam entre casas de câmbio.</p><p>&copy; ' . date('Y') . ' Dólar Hoje</p></div></footer>'
        . '<script>document.querySelectorAll(".calc").forEach(function(f){var r=+f.dataset.r,a=f.querySelector("[data-k=f]"),b=f.querySelector("[data-k=b]");a.oninput=function(){b.value=(a.value*r).toFixed(2)};b.oninput=function(){a.value=(b.value/r).toFixed(4)}});'
        . 'var cv=document.getElementById("cv");if(cv){var R=JSON.parse(document.getElementById("rt").textContent),g=function(i){return cv.querySelector(i)},u=function(){var o=g("#v").value*R[g("#de").value]/R[g("#pa").value];g("output").textContent=isFinite(o)?o.toLocaleString("pt-BR",{maximumFractionDigits:o<1?6:4}):"-"};cv.oninput=u;u()}</script>'
-       . (preg_match('/^G-[A-Z0-9]+$/', $ga) ? loader("https://www.googletagmanager.com/gtag/js?id=$ga", "window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','$ga')") : '')
        . (preg_match('/^ca-pub-\d+$/', $ad) ? loader("https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=$ad") : '')
        . '</body></html>';
+}
+function gtagHead(string $id): string {   // snippet padrão do Google (gtag.js), aceita G-, UA- ou AW-
+    if (!preg_match('/^(G|UA|AW)-[A-Z0-9-]+$/', $id)) return '';
+    return '<script async src="https://www.googletagmanager.com/gtag/js?id=' . $id . '"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","' . $id . '");</script>';
 }
 function hero(string $h1, string $p): string { return '<div class="hero"><div class="w"><h1>' . h($h1) . '</h1><p>' . h($p) . '</p></div></div>'; }
 function card(string $label, string $valor, string $sub, string $href, bool $t = false): string {

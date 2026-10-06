@@ -9,7 +9,7 @@ Site em um único `index.php` (PHP 8.1+, PDO/MySQL). Web: rotas, SEO e páginas.
 4. Cron (cPanel > Cron Jobs), por exemplo de hora em hora entre 8h e 19h:
    `5 8-19 * * * /usr/local/bin/php /home/simul637/public_html/index.php cron >/dev/null 2>&1`
    Alternativa por URL (se o cron só aceita URL): defina `CRON_KEY` no `config.php` e agende `wget -q -O /dev/null "https://www.dolarhoje.net.br/fetch-cotacoes.php?key=SUA_CHAVE"`. Sem chave válida a URL responde 404.
-5. Opcional: `GA_ID` (padrão `UA-6425016-24`; aceita `G-...`; vazio desliga) e `ADSENSE_ID` no `config.php`.
+5. Opcional: `GA_ID` (padrão `UA-6425016-24`; aceita `G-...`; vazio desliga) e `ADSENSE_ID` (padrão `ca-pub-1615119579984751`; vazio desliga) no `config.php`.
 
 ## Rotas
 `/`, `/dolar-comercial/`, `/dolar-turismo/`, `/dolar-real/`, `/euro/`, `/euro-turismo/`, `/conversor-de-moedas/`, `/{moeda}.php` (todas as moedas do menu "+ Outros"), `/sitemap.xml`, `/?action=cotacoes` (JSON). URLs antigas sem página equivalente: edite `LEGADO` no `index.php`.

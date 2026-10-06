@@ -80,7 +80,7 @@ function indicadores(): array {
     $meses = [1 => 'jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
     $o = [];
     if ($s = q1('SELECT valor, data FROM selic ORDER BY data DESC LIMIT 1'))
-        $o[] = ['SELIC (meta)', number_format((float)$s['valor'], 2, ',', '') . '% a.a.', 'desde ' . date('d/m/Y', strtotime((string)$s['data']))];
+        $o[] = ['SELIC (meta)', number_format((float)$s['valor'], 2, ',', '') . '% a.a.', 'reunião do Copom de ' . date('d/m/Y', strtotime((string)$s['data']))];
     foreach (['ipca' => 'IPCA', 'cdi' => 'CDI'] as $t => $l)
         if ($r = q1("SELECT mes, ano, valor FROM $t ORDER BY ano DESC, mes DESC LIMIT 1"))
             $o[] = [$l . ' (mês)', number_format((float)$r['valor'], 2, ',', '') . '%', ($meses[(int)$r['mes']] ?? '') . '/' . $r['ano']];

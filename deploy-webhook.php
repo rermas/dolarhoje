@@ -37,6 +37,7 @@ $evento = (string)($_SERVER['HTTP_X_GITHUB_EVENT'] ?? '');
 if ($evento === 'ping') resp(200, 'pong');
 if ($evento !== 'push') resp(202, "evento ignorado: $evento");
 $j = json_decode($body, true);
+if (!is_array($j) && isset($_POST['payload'])) $j = json_decode((string)$_POST['payload'], true);   // webhook configurado como application/x-www-form-urlencoded
 if (($j['ref'] ?? '') !== "refs/heads/$branch") resp(202, 'branch ignorada: ' . ($j['ref'] ?? '?'));
 
 $lk = fopen(sys_get_temp_dir() . '/dolarhoje-deploy.lock', 'c');

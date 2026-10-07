@@ -12,6 +12,9 @@ RewriteRule ^ https://www.dolarhoje.net.br%{REQUEST_URI} [L,R=301]
 RewriteCond %{HTTP_HOST} !^www\.dolarhoje\.net\.br$ [NC]
 RewriteRule ^ https://www.dolarhoje.net.br%{REQUEST_URI} [L,R=301]
 
+# ads.txt gerenciado pelo Ezoic (Ads.txt Manager)
+RewriteRule ^ads\.txt$ https://srv.adstxtmanager.com/19390/dolarhoje.net.br [R=301,L]
+
 # .php antigo na RAIZ (libra.php, etc.) e qualquer rota inexistente vão para o index.php,
 # que responde com 200, 301 ou 404 corretos. Scripts em subpastas (ex.: /apps/query.php) rodam normalmente.
 RewriteRule ^index\.php$ - [L]

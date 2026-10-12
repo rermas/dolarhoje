@@ -644,6 +644,8 @@ try {
         $b = substr($p, 0, -4);
         if (isset(MOEDAS[$b])) irPara(url($b));
         if (isset(PAGINAS[$b]) || isset(ESPECIAIS[$b]) || isset(slugs()[$b])) irPara("/$b/");
+        foreach (array_merge(array_keys(PAGINAS), array_keys(ESPECIAIS), array_keys(slugs())) as $sl)   // pesomexicano.php => /peso-mexicano/ (slug sem hífens)
+            if (str_replace('-', '', $sl) === $b) irPara("/$sl/");
     }
     if (isset(PAGINAS[$p])) { if (!$dir) irPara("/$p/"); pgMoeda(...PAGINAS[$p]); exit; }
     if (isset(ESPECIAIS[$p])) { if (!$dir) irPara("/$p/"); (ESPECIAIS[$p])(); exit; }

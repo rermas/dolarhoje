@@ -7,7 +7,10 @@ return [
     'data'       => '2026-10-09',
     'atualizado' => null,
     'conteudo'   => function (): void {
-        ?>
+        $pos = date('Y-m-d') >= '2026-10-26';
+        if ($pos): ?>
+        <p class="cta"><b>Atualização:</b> o segundo turno ocorreu em 25 de outubro. Este artigo foi escrito antes do resultado e mantém os cenários como referência. Para a leitura do período pós-eleição, veja <?= lp('dolar-apos-segundo-turno-o-que-observar', 'o que observar na primeira semana') ?>.</p>
+        <?php endif; ?>
         <p>Eleição gera volatilidade, e a reação mais comum é mexer na carteira por impulso. Antes de qualquer ajuste, vale lembrar que o <strong>perfil de investidor</strong> e o <strong>prazo</strong> dos seus objetivos pesam mais que o resultado de uma única eleição. Veja a <?= lp('eleicoes-2026-investimentos-lula-ou-flavio', 'visão geral dos dois cenários') ?> antes de ler este texto.</p>
         <p>O conteúdo é educativo e geral: não considera a sua situação pessoal.</p>
 

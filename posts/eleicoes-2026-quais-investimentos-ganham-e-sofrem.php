@@ -7,7 +7,10 @@ return [
     'data'       => '2026-10-12',
     'atualizado' => null,
     'conteudo'   => function (): void {
-        ?>
+        $pos = date('Y-m-d') >= '2026-10-26';
+        if ($pos): ?>
+        <p class="cta"><b>Atualização:</b> o segundo turno ocorreu em 25 de outubro. Este artigo foi escrito antes do resultado e mantém os cenários como referência. Para a leitura do período pós-eleição, veja <?= lp('dolar-apos-segundo-turno-o-que-observar', 'o que observar na primeira semana') ?>.</p>
+        <?php endif; ?>
         <p>Cada classe de ativo reage de forma diferente a mudanças no cenário de juros, câmbio e confiança. A tabela abaixo resume reações <strong>típicas</strong> em cada cenário, sempre condicionadas ao que o governo eleito sinalizar. Leia primeiro a <?= lp('eleicoes-2026-investimentos-lula-ou-flavio', 'visão geral dos dois cenários') ?>.</p>
         <p>Aviso: são hipóteses de mercado, não previsões nem recomendações. Ativos que "sofrem" em um cenário não estão errados, só ficam menos favorecidos no curto prazo.</p>
 

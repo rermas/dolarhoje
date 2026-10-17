@@ -30,11 +30,12 @@ const PAGINAS = [
     'euro' => ['euro', 'comercial'], 'euro-turismo' => ['euro', 'turismo'],
 ];
 /* demais páginas (função de render) */
-const ESPECIAIS = ['conversor-de-moedas' => 'pgConversor', 'dolar-ptax' => 'pgPtax', 'dolar-paralelo' => 'pgParalelo', 'dolar-grafico' => 'pgGrafico'];
+const ESPECIAIS = ['sobre' => 'pgSobre', 'politica-de-privacidade' => 'pgPrivacidade', 'conversor-de-moedas' => 'pgConversor', 'dolar-ptax' => 'pgPtax', 'dolar-paralelo' => 'pgParalelo', 'dolar-grafico' => 'pgGrafico'];
 /* URLs antigas fora do padrão "/{página}.php" => destino (301). Todo "/x.php" cujo x é uma moeda ou página acima redireciona sozinho. */
 const LEGADO = [
     'index.php' => '/', 'dolar.php' => '/dolar-comercial/', 'dolarptax.php' => '/dolar-ptax/', 'bolivarvenezuelano.php' => '/', 'euro-comercial' => '/euro/',
 ];
+const EXTINTAS = ['hrk'];   // moedas que deixaram de circular: a página continua no ar (links antigos), mas sai de menu, tabela, conversor e sitemap
 function url(string $m): string { return '/' . MOEDAS[$m][2] . '/'; }
 function slugs(): array { static $s = null; return $s ??= array_combine(array_column(MOEDAS, 2), array_keys(MOEDAS)); }
 
@@ -212,7 +213,7 @@ function layout(string $title, string $desc, string $path, string $main, string 
     header('Cache-Control: public, max-age=300');
     $url = base() . $path;
     $outros = '<a href="/dolar-ptax/">Dólar PTAX</a><a href="/dolar-paralelo/">Dólar Paralelo</a>';
-    foreach (MOEDAS as $n => [$c, $l]) if (!in_array($n, ['usd', 'euro'], true)) $outros .= '<a href="' . url($n) . '">' . h($l) . '</a>';
+    foreach (MOEDAS as $n => [$c, $l]) if (!in_array($n, ['usd', 'euro', ...EXTINTAS], true)) $outros .= '<a href="' . url($n) . '">' . h($l) . '</a>';
     $nomePg = $nome ?? trim(preg_split('/\s*[:|]\s*/', $title)[0]); $crumb = '';
     if ($path !== '/' && $status === 200) {
         $crumb = '<script type="application/ld+json">' . json_encode(['@context' => 'https://schema.org', '@type' => 'BreadcrumbList', 'itemListElement' => [
@@ -233,7 +234,7 @@ function layout(string $title, string $desc, string $path, string $main, string 
        . '<a href="/dolar-comercial/">Dólar</a><a href="/dolar-turismo/">Dólar Turismo</a><a href="/euro/">Euro</a><a href="/euro-turismo/">Euro Turismo</a><a href="/dolar-grafico/">Gráfico</a><a href="/conversor-de-moedas/">Conversor</a><a href="/blog/">Blog</a>'
        . '<details class="o"><summary>+ Outros</summary><div>' . $outros . '</div></details></nav></div></header>'
        . $hero . '<main class="w">' . $main . '</main>'
-       . '<footer><div class="w"><p>Cotações de referência, atualizadas várias vezes ao dia a partir de fontes públicas. Caráter informativo, sem oferta de compra ou venda. Valores de turismo são estimativas e variam entre casas de câmbio.</p><p>&copy; ' . date('Y') . ' Dólar Hoje</p></div></footer>'
+       . '<footer><div class="w"><p>Cotações de referência, atualizadas várias vezes ao dia a partir de fontes públicas. Caráter informativo, sem oferta de compra ou venda. Valores de turismo são estimativas e variam entre casas de câmbio.</p><p><a href="/sobre/">Sobre</a> · <a href="/politica-de-privacidade/">Política de privacidade</a> · <a href="/blog/">Blog</a> · &copy; ' . date('Y') . ' Dólar Hoje</p></div></footer>'
        . '<script>document.querySelectorAll(".calc").forEach(function(f){var r=+f.dataset.r,a=f.querySelector("[data-k=f]"),b=f.querySelector("[data-k=b]"),n=function(x){return x>=1?x.toFixed(2):String(+x.toPrecision(4))};a.oninput=function(){b.value=n(a.value*r)};b.oninput=function(){a.value=n(b.value/r)}});'
        . 'var cv=document.getElementById("cv");if(cv){var R=JSON.parse(document.getElementById("rt").textContent),g=function(i){return cv.querySelector(i)},u=function(){var o=g("#v").value*R[g("#de").value]/R[g("#pa").value];g("output").textContent=isFinite(o)?o.toLocaleString("pt-BR",{maximumFractionDigits:o<1?6:4}):"-"};cv.oninput=u;u()}</script>'
        . '</body></html>';
@@ -315,6 +316,11 @@ function histTabela(array $pts, int $max = 10, array $cols = []): string {
         $o .= '<tr><td>' . date('d/m/Y', strtotime($pts[$i]['d'])) . '</td><td>R$ ' . fmt($pts[$i]['v']) . '</td><td>' . ($i ? pctSpan($pts[$i]['v'], $pts[$i - 1]['v']) : '–') . '</td></tr>';
     return '<table><thead><tr><th>Data</th><th>Valor</th><th>Variação</th></tr></thead><tbody>' . $o . '</tbody></table>';
 }
+function periodoTxt(array $pts, int $dias): string {   // 'últimos 30 dias' só quando o histórico cobre o período
+    $n = count($pts); if ($n < 2) return "últimos $dias dias";
+    $span = (int)round((strtotime($pts[$n - 1]['d']) - strtotime($pts[0]['d'])) / 86400);
+    return $span >= $dias - 3 ? "últimos $dias dias" : "últimos $span dias";
+}
 function nomeMoeda(string $m): string { return $m === 'usd' ? 'Dólar' : MOEDAS[$m][1]; }
 
 /* textos próprios de algumas moedas: 'sobre' (HTML confiável) e 'faq' ({v} = valor atual) */
@@ -376,14 +382,14 @@ function pgHome(): void {
     $ind = '';
     foreach (indicadores() as [$l, $v, $ref]) $ind .= '<div class="card t"><small>' . h($l) . '</small><b>' . h($v) . '</b><small>' . h($ref) . '</small></div>';
     $linhas = '';
-    foreach ($c as $n => $r)
+    foreach ($c as $n => $r) if (!in_array($n, EXTINTAS, true))
         $linhas .= '<tr><td><a href="' . url($n) . '">' . h(MOEDAS[$n][1]) . '</a></td><td>' . h(MOEDAS[$n][0]) . '</td><td>R$ ' . fmt($r['v']) . '</td><td>' . (isset($ant[$n]) ? pctSpan($r['v'], $ant[$n]['v']) : '–') . '</td></tr>';
     $pts = historico('usd', 30);
-    $graf = count($pts) > 1 ? '<h2>Dólar nos últimos 30 dias</h2>' . grafico($pts, 'Dólar em reais, últimos 30 dias') . '<p><a href="/dolar-grafico/">Ver gráfico completo do dólar</a></p>' : '';
+    $graf = count($pts) > 1 ? '<h2>Dólar nos ' . periodoTxt($pts, 30) . '</h2>' . grafico($pts, 'Dólar em reais, ' . periodoTxt($pts, 30)) . '<p><a href="/dolar-grafico/">Ver gráfico completo do dólar</a></p>' : '';
     $bl = blog_posts() ? '<h2>Do blog</h2>' . cardsPosts(array_slice(blog_posts(), 0, 3)) . '<p><a href="/blog/">Ver todos os artigos</a></p>' : '';
     $ld = json_encode(['@context' => 'https://schema.org', '@type' => 'WebSite', 'name' => 'Dólar Hoje', 'url' => base() . '/', 'inLanguage' => 'pt-BR'], JSON_UNESCAPED_SLASHES);
     $usd = isset($c['usd']) ? 'R$ ' . fmt($c['usd']['v']) : '';
-    layout('Dólar hoje: cotação do dólar, euro e outras moedas', "Dólar comercial $usd e turismo, euro e mais " . (count($c) - 2) . ' moedas em real, com histórico, conversor e Selic, IPCA e CDI.', '/',
+    layout('Dólar hoje: cotação do dólar, euro e outras moedas', "Dólar comercial $usd e turismo, euro e mais " . (count($c) - 2 - count(array_intersect(EXTINTAS, array_keys($c)))) . ' moedas em real, com histórico, conversor e Selic, IPCA e CDI.', '/',
         '<div class="grid">' . $cards . '</div>' . $graf . '<h2>Indicadores econômicos</h2><div class="grid">' . $ind . '</div>'
         . '<h2>Todas as moedas em real</h2><table><thead><tr><th>Moeda</th><th>Código</th><th>Valor em R$</th><th>Variação</th></tr></thead><tbody>' . $linhas . '</tbody></table>'
         . '<h2>Como ler as cotações</h2><p>O <b>dólar comercial</b> é a referência do mercado, usada em operações de comércio exterior e investimentos. O <b>dólar turismo</b> é o valor cobrado de quem compra moeda em espécie ou cartão pré-pago para viajar e fica acima do comercial por causa do spread das casas de câmbio. Aqui o turismo é <a href="/dolar-turismo/">estimado a partir do comercial</a>.</p>'
@@ -428,7 +434,7 @@ function pgMoeda(string $m, string $modo): void {
     if (!$itens) $itens = [["Quanto vale 1 $iso em reais hoje?", "A cotação de referência de hoje é de R$ " . fmt($com) . " por 1 $iso (atualizada em $data)."], ['De onde vêm as cotações?', 'De fontes públicas de mercado, atualizadas várias vezes ao dia. Servem como referência e não incluem spread, IOF ou taxas.']];
     [$fh, $fld] = faq($itens);
     $pts = historico($m, 30);
-    $hist = '<h2>Histórico do ' . h($nome) . '</h2>' . grafico($pts, "$iso/BRL, últimos 30 dias") . histTabela($pts, 10)
+    $hist = '<h2>Histórico do ' . h($nome) . '</h2>' . grafico($pts, "$iso/BRL, " . periodoTxt($pts, 30)) . histTabela($pts, 10)
           . ($m === 'usd' ? '<p><a href="/dolar-grafico/">Ver gráfico completo do dólar</a></p>' : '<p><a href="/dolar-grafico/?moeda=' . $m . '">Ver gráfico de períodos maiores</a></p>');
     layout($title, ($real ? 'Converta dólar em real' : "Cotação do $nome ($iso) hoje") . ': R$ ' . fmt($com) . ". Histórico recente e conversor $iso/BRL.", $path,
         '<div class="grid">' . card("$iso/BRL", fmt($com), 'atualizado em ' . h($data) . $var, '#') . ($m === 'usd' || $m === 'euro' ? card("$nome turismo (estimado)", fmt(turismo($m, $com)), 'veja a página de turismo', $m === 'usd' ? '/dolar-turismo/' : '/euro-turismo/', true) : '') . '</div>'
@@ -474,7 +480,7 @@ function pgGrafico(): void {
     $dias = in_array((int)($_GET['periodo'] ?? 0), [30, 90, 180, 365], true) ? (int)$_GET['periodo'] : 90;
     $nome = nomeMoeda($m); $iso = MOEDAS[$m][0];
     $pts = historico($m, $dias);
-    $op = ''; foreach (MOEDAS as $n => [$i, $l]) $op .= '<option value="' . $n . '"' . ($n === $m ? ' selected' : '') . '>' . h($l) . ' (' . $i . ')</option>';
+    $op = ''; foreach (MOEDAS as $n => [$i, $l]) if (!in_array($n, EXTINTAS, true) || $n === $m) $op .= '<option value="' . $n . '"' . ($n === $m ? ' selected' : '') . '>' . h($l) . ' (' . $i . ')</option>';
     $pe = ''; foreach ([30 => '30 dias', 90 => '3 meses', 180 => '6 meses', 365 => '1 ano'] as $d => $l) $pe .= '<option value="' . $d . '"' . ($d === $dias ? ' selected' : '') . '>' . $l . '</option>';
     $resumo = '';
     if (count($pts) > 1) {
@@ -484,7 +490,7 @@ function pgGrafico(): void {
     $atual = isset($c[$m]) ? 'R$ ' . fmt($c[$m]['v']) : '';
     layout($m === 'usd' ? 'Gráfico do dólar hoje: evolução do USD/BRL' : "Gráfico do $nome: evolução do $iso/BRL", "Gráfico e histórico do " . ($m === 'usd' ? 'dólar' : $nome) . " em reais" . ($atual ? " (hoje $atual)" : '') . ', com máxima, mínima e variação no período.', '/dolar-grafico/',
         '<form class="f2" method="get" action="/dolar-grafico/"><label>Moeda<select name="moeda">' . $op . '</select></label><label>Período<select name="periodo">' . $pe . '</select></label><button>Ver gráfico</button></form>'
-        . $resumo . grafico($pts, "$iso/BRL, últimos $dias dias") . histTabela($pts, 30)
+        . $resumo . grafico($pts, "$iso/BRL, " . periodoTxt($pts, $dias)) . histTabela($pts, 30)
         . '<h2>Como ler o gráfico</h2><p>A linha mostra o valor de 1 ' . h($iso) . ' em reais ao fim de cada dia registrado. Subidas indicam que a moeda estrangeira ficou mais cara em relação ao real; quedas, o contrário. Para decisões de compra, observe também a tendência do período, e não só o valor do dia.</p>'
         . '<p>Veja também: <a href="/dolar-comercial/">dólar comercial</a> · <a href="/dolar-turismo/">dólar turismo</a> · <a href="/dolar-ptax/">dólar PTAX</a> · <a href="/conversor-de-moedas/">conversor</a>.</p>',
         hero($m === 'usd' ? 'Gráfico do dólar' : "Gráfico do $nome", 'Evolução da cotação em reais ao longo do tempo.'));
@@ -596,9 +602,30 @@ function feed(): void {
     echo '</channel></rss>';
 }
 
+function pgSobre(): void {
+    layout('Sobre o Dólar Hoje', 'Conheça o Dólar Hoje: de onde vêm as cotações, como estimamos o dólar turismo e quais são os limites das informações do site.', '/sobre/',
+        '<h2>O que é o Dólar Hoje</h2><p>O Dólar Hoje é um site brasileiro de consulta de câmbio. Reunimos cotações do dólar, do euro e de outras moedas em reais, com histórico, gráficos, conversor, PTAX e artigos que explicam o mercado em linguagem simples.</p>'
+        . '<h2>De onde vêm os números</h2><p>As cotações de referência são coletadas de fontes públicas de mercado várias vezes ao dia e guardadas em nosso banco de dados para formar o histórico. A PTAX vem do Banco Central do Brasil. Selic, CDI e IPCA são indicadores oficiais divulgados pelo Banco Central e pelo IBGE.</p>'
+        . '<h2>Dólar turismo é estimativa</h2><p>Não existe uma cotação oficial única do dólar turismo. Mostramos uma estimativa a partir do dólar comercial acrescido de um percentual de spread, que serve como referência. Cada instituição define o próprio preço, e o IOF e as tarifas são cobrados à parte.</p>'
+        . '<h2>Limites</h2><p>O conteúdo tem caráter informativo e educativo. Não é oferta de compra ou venda de moeda e não constitui recomendação de investimento. Para operações reais, confirme os valores com a instituição financeira.</p>'
+        . '<p>Veja também a <a href="/politica-de-privacidade/">política de privacidade</a> e os <a href="/blog/">artigos do blog</a>.</p>',
+        hero('Sobre o Dólar Hoje', 'Quem somos, de onde vêm as cotações e o que o site não faz.'));
+}
+function pgPrivacidade(): void {
+    layout('Política de privacidade | Dólar Hoje', 'Como o Dólar Hoje trata dados, cookies, estatísticas de acesso e publicidade, e como você pode gerenciar suas preferências.', '/politica-de-privacidade/',
+        '<p>Esta política explica quais informações podem ser coletadas quando você usa o Dólar Hoje e como são utilizadas.</p>'
+        . '<h2>Dados que não pedimos</h2><p>O site não exige cadastro e não solicita dados pessoais para consultar cotações, usar o conversor ou ler os artigos.</p>'
+        . '<h2>Estatísticas de acesso</h2><p>Usamos o Google Analytics para entender como o site é usado (páginas visitadas, tempo de navegação, tipo de dispositivo). Os dados são agregados e usam cookies e identificadores do navegador.</p>'
+        . '<h2>Publicidade e cookies</h2><p>O site exibe anúncios por meio de parceiros como o Google AdSense e plataformas de gestão de anúncios, como o Ezoic. Esses parceiros podem usar cookies e identificadores para exibir anúncios relevantes e medir resultados. Você pode saber mais e gerenciar preferências de anúncios personalizados em <a href="https://adssettings.google.com" rel="noopener">adssettings.google.com</a> e pode bloquear ou apagar cookies nas configurações do seu navegador.</p>'
+        . '<h2>Registros do servidor</h2><p>Como em qualquer site, o servidor registra informações técnicas de acesso (como endereço IP, data e página solicitada) para segurança e funcionamento.</p>'
+        . '<h2>Links externos</h2><p>Alguns textos apontam para sites de terceiros, como o Banco Central. Não controlamos esses sites nem suas políticas.</p>'
+        . '<h2>Seus direitos</h2><p>Nos termos da Lei Geral de Proteção de Dados (LGPD), você pode solicitar informações sobre o tratamento de dados pessoais. Como não mantemos cadastro de usuários, as informações tratadas se limitam às descritas acima.</p>'
+        . '<p class="note">Esta política pode ser atualizada. A versão em vigor é sempre a publicada nesta página.</p>',
+        hero('Política de privacidade', 'Dados, cookies, estatísticas e publicidade.'));
+}
 function pgConversor(): void {
     $c = cotacoes(); $rt = ['BRL' => 1.0]; $op = '<option value="BRL">BRL — Real</option>';
-    foreach ($c as $n => $r) { $rt[MOEDAS[$n][0]] = $r['v']; $op .= '<option value="' . MOEDAS[$n][0] . '">' . MOEDAS[$n][0] . ' — ' . h(MOEDAS[$n][1]) . '</option>'; }
+    foreach ($c as $n => $r) { if (in_array($n, EXTINTAS, true)) continue; $rt[MOEDAS[$n][0]] = $r['v']; $op .= '<option value="' . MOEDAS[$n][0] . '">' . MOEDAS[$n][0] . ' — ' . h(MOEDAS[$n][1]) . '</option>'; }
     $ini = isset($c['usd']) ? fmt($c['usd']['v']) : '';
     layout('Conversor de moedas: dólar, euro e outras para real', 'Converta dólar, euro, libra e mais moedas para real (BRL) e entre si, com cotações atualizadas.', '/conversor-de-moedas/',
         '<form id="cv" class="cv" onsubmit="return false"><label>Valor<input id="v" type="number" step="any" value="1" inputmode="decimal"></label>'
@@ -610,11 +637,12 @@ function pgConversor(): void {
 function sitemap(): void {
     header('Content-Type: application/xml; charset=utf-8'); header('Cache-Control: public, max-age=3600');
     $c = cotacoes(); $u = ['/' => 1.0, '/dolar-comercial/' => 0.9, '/dolar-turismo/' => 0.9, '/euro/' => 0.8, '/euro-turismo/' => 0.8, '/dolar-real/' => 0.7, '/dolar-grafico/' => 0.7, '/dolar-ptax/' => 0.7, '/dolar-paralelo/' => 0.6, '/conversor-de-moedas/' => 0.7];
-    foreach ($c as $n => $_) if (!in_array($n, ['usd', 'euro'], true)) $u[url($n)] = 0.5;
-    $u['/blog/'] = 0.6; foreach (blog_posts() as $p) $u['/blog/' . $p['slug'] . '/'] = 0.6;
-    foreach ($c as $n => $_) { $b = cbase($n); $u["/real-para-$b/"] = 0.6; if ($n !== 'usd') $u["/$b-para-real/"] = 0.6; }
+    foreach ($c as $n => $_) if (!in_array($n, ['usd', 'euro', ...EXTINTAS], true)) $u[url($n)] = 0.5;
+    $u['/blog/'] = 0.6; $u['/sobre/'] = 0.3; $u['/politica-de-privacidade/'] = 0.3; $lm = [];
+    foreach (blog_posts() as $p) { $u['/blog/' . $p['slug'] . '/'] = 0.6; $lm['/blog/' . $p['slug'] . '/'] = (string)($p['atualizado'] ?? $p['data']); }
+    foreach ($c as $n => $_) { if (in_array($n, EXTINTAS, true)) continue; $b = cbase($n); $u["/real-para-$b/"] = 0.6; if ($n !== 'usd') $u["/$b-para-real/"] = 0.6; }
     echo '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
-    foreach ($u as $p => $pr) echo '<url><loc>' . h(base() . $p) . '</loc><lastmod>' . date('Y-m-d') . '</lastmod><priority>' . $pr . '</priority></url>';
+    foreach ($u as $p => $pr) echo '<url><loc>' . h(base() . $p) . '</loc><lastmod>' . ($lm[$p] ?? date('Y-m-d')) . '</lastmod><priority>' . $pr . '</priority></url>';
     echo '</urlset>';
 }
 

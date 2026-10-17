@@ -19,7 +19,7 @@ return [
         <p>Uma abordagem comum é dividir por objetivo: reserva de emergência em pós-fixado com liquidez; metas de médio prazo em prefixado ou IPCA+ com vencimento próximo ao objetivo; e parte do longo prazo em IPCA+.</p>
         <h2>Pontos de atenção</h2>
         <ul>
-        <li>Imposto de renda regressivo, de 22,5% a 15% conforme o prazo, na maioria dos títulos (isentos como LCI, LCA têm regras próprias).</li>
+        <li>Imposto de renda regressivo, de 22,5% a 15% conforme o prazo, na maioria dos títulos. LCI e LCA, para pessoa física, são isentas de IR, mas costumam ter prazo mínimo de carência.</li>
         <li>Limite de cobertura do FGC para emissões bancárias.</li>
         <li>Marcação a mercado nos títulos com vencimento longo.</li>
         </ul>

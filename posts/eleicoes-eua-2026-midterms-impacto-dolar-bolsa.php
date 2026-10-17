@@ -18,7 +18,7 @@ return [
         <h2>Efeito sobre o Brasil</h2>
         <p>O principal canal é o dólar global: quando os juros americanos sobem ou o apetite a risco cai, o <a href="/dolar-comercial/">dólar</a> costuma subir frente ao real. Quando o ambiente fica mais favorável a emergentes, ocorre o oposto.</p>
         <h2>Como pensar sem apostar em manchete</h2>
-        <p>Historicamente, o mercado reage mais à surpresa do que ao resultado esperado. Evite decisões baseadas em um único evento e mantenha a carteira diversificada. A semana da eleição americana ainda terá o <?= lp('fed-copom-juros-o-que-esperar-fim-de-2026','Fed e o Copom') ?> no radar.</p>
+        <p>Historicamente, o mercado reage mais à surpresa do que ao resultado esperado. Evite decisões baseadas em um único evento e mantenha a carteira diversificada. O calendário também ajuda a não se perder: a reunião do Fed é no fim de outubro e a do Copom cai na semana da eleição americana (veja <?= lp('fed-copom-juros-o-que-esperar-fim-de-2026','Fed e Copom') ?>).</p>
         <p class="note">Conteúdo educativo, sem recomendação de investimento. Cenários são hipóteses e mudam com novos fatos; confira dados atualizados e, se necessário, converse com um profissional habilitado.</p>
         <?php
     },

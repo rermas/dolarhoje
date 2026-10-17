@@ -9,7 +9,9 @@ return [
     'conteudo'   => function (): void {
         ?>
         <p>As decisões de juros do Federal Reserve (Fed), nos EUA, e do Copom, no Brasil, estão entre os eventos que mais influenciam o <a href="/dolar-comercial/">dólar</a> e as carteiras de investimento.</p>
-        <h2>A diferença de juros</h2>
+        <h2>Datas para ter no calendário</h2>
+<p>Pelos calendários divulgados, o Fed (FOMC) se reúne em 27 e 28 de outubro e o Copom em 3 e 4 de novembro, ambos com decisão no segundo dia. Confira no site de cada instituição, pois as datas podem ser alteradas.</p>
+<h2>A diferença de juros</h2>
         <p>Investidores comparam o rendimento no Brasil com o dos EUA. Uma Selic bem acima dos juros americanos atrai capital e tende a sustentar o real; se a diferença diminui, esse atrativo cai. Já quando o Fed sobe ou mantém juros altos por mais tempo, o dólar tende a se fortalecer globalmente.</p>
         <h2>O que observar</h2>
         <ul>

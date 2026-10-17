@@ -8,7 +8,10 @@ return [
     'atualizado' => null,
     'conteudo'   => function (): void {
         $ind = indicadores();
-        ?>
+        $pos = date('Y-m-d') >= '2026-10-26';
+        if ($pos): ?>
+        <p class="cta"><b>Atualização:</b> o segundo turno ocorreu em 25 de outubro. Este artigo foi escrito antes do resultado e mantém os cenários como referência. Para a leitura do período pós-eleição, veja <?= lp('dolar-apos-segundo-turno-o-que-observar', 'o que observar na primeira semana') ?>.</p>
+        <?php endif; ?>
         <p>A eleição presidencial mexe com investimentos por um motivo simples: ela muda as <strong>expectativas</strong> sobre as contas públicas, os juros e a relação do governo com as empresas. Como preços de mercado negociam o futuro, dólar, bolsa e juros futuros costumam reagir antes mesmo do resultado.</p>
         <p>Este artigo explica, de forma neutra, como o mercado costuma raciocinar nos dois cenários do segundo turno, entre Lula e Flávio Bolsonaro. Não é opinião política nem recomendação de voto ou de investimento. O texto foi escrito antes do resultado.</p>
 

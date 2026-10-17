@@ -4,7 +4,7 @@ return [
     'slug'       => 'selic-cdi-ipca-o-que-sao',
     'titulo'     => 'Selic, CDI e IPCA: o que são e como se relacionam',
     'resumo'     => 'Entenda de forma simples o que cada indicador mede, quem os define e como eles afetam seus investimentos e o dólar.',
-    'data'       => '2026-10-27',
+    'data'       => '2026-10-19',
     'atualizado' => null,
     'conteudo'   => function (): void {
         $ind = indicadores();

@@ -11,7 +11,7 @@ return [
         <p>O dólar é um preço, e como todo preço ele sobe quando há mais gente querendo comprar do que vender, e cai no caso contrário. A pergunta de verdade é: o que leva o mercado a querer mais ou menos dólar? Alguns fatores aparecem com mais frequência.</p>
 
         <h2>1. Juros no Brasil e nos Estados Unidos</h2>
-        <p>Quando os juros brasileiros (a <a href="/">Selic</a>) estão altos em relação aos americanos, investir no Brasil rende mais, atrai capital estrangeiro e tende a valorizar o real. Quando a diferença diminui, ou os juros nos Estados Unidos sobem, parte desse dinheiro volta para lá e o dólar tende a subir.</p>
+        <p>Quando os juros brasileiros (a <?= lp('selic-cdi-ipca-o-que-sao', 'Selic') ?>) estão altos em relação aos americanos, investir no Brasil rende mais, atrai capital estrangeiro e tende a valorizar o real. Quando a diferença diminui, ou os juros nos Estados Unidos sobem, parte desse dinheiro volta para lá e o dólar tende a subir.</p>
 
         <h2>2. Cenário fiscal e confiança</h2>
         <p>Dúvidas sobre as contas públicas, endividamento e a capacidade do governo de cumprir metas fiscais elevam o risco percebido do país. Mais risco significa que investidores pedem mais retorno ou preferem sair, e o dólar sobe.</p>

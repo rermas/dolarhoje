@@ -11,7 +11,7 @@ declare(strict_types=1);
  */
 foreach (['deploy-secret.php', 'config.php'] as $f) if (is_file(__DIR__ . "/$f")) require_once __DIR__ . "/$f";
 
-const ARQUIVOS = ['index.php', 'deploy-webhook.php', 'robots.txt', '.htaccess'];
+const ARQUIVOS = ['index.php', 'deploy-webhook.php', 'robots.txt', '.htaccess', 'og.png'];
 
 function resp(int $code, string $msg): never {
     http_response_code($code); header('Content-Type: text/plain; charset=utf-8'); header('Cache-Control: no-store'); echo $msg . "\n"; exit;

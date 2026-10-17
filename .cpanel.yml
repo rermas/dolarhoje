@@ -3,6 +3,6 @@ deployment:
   tasks:
     # Ajuste DEPLOYPATH para a pasta raiz do domínio no seu cPanel
     - export DEPLOYPATH=/home/simul637/public_html/dolarhoje/
-    - /bin/cp -f index.php deploy-webhook.php robots.txt .htaccess $DEPLOYPATH
+    - /bin/cp -f index.php deploy-webhook.php robots.txt .htaccess og.png $DEPLOYPATH
     - /bin/mkdir -p $DEPLOYPATH/posts
     - /bin/cp -f posts/*.php $DEPLOYPATH/posts/
